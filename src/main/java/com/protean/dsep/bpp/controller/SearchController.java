@@ -3,6 +3,7 @@ package com.protean.dsep.bpp.controller;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,8 @@ import com.protean.dsep.bpp.builder.ResponseBuilder;
 import com.protean.dsep.bpp.service.AuditService;
 import com.protean.dsep.bpp.service.SearchService;
 import com.protean.dsep.bpp.util.JsonUtil;
+import com.protean.dsep.bpp.util.SecurityUtil;
+
 import lombok.extern.slf4j.Slf4j;
 
 import static com.protean.dsep.bpp.constant.ApplicationConstant.EXTERNAL_CONTEXT_ROOT;
@@ -36,24 +39,37 @@ public class SearchController {
 	
 	@Autowired
 	private ResponseBuilder responseBuilder;
+	
+	@Autowired
+	private SecurityUtil securityUtil;
 
+	@Value("${beckn.req.auth}")
+	private boolean isAuthReq;
+	
 	@PostMapping("/search")
 	public ResponseEntity<String> search(@RequestBody SearchRequest body, @RequestHeader HttpHeaders httpHeaders) throws JsonProcessingException {
 		log.info("The body in mock seller is {}", body);
-
+		log.info("isAuthReq ==> {}",isAuthReq);
 		//SearchRequest model = this.jsonUtil.toModelSnakeCase(body, SearchRequest.class);
-		
 		SearchRequest model = body;
+		boolean isValidHeader = true;
 		
-		this.auditService.saveAudit(model.getContext(), this.jsonUtil.toJson(body));
+		if(isAuthReq) {
+			isValidHeader = securityUtil.authorizeHeader(httpHeaders);
+		}
 		
-		CompletableFuture.runAsync(() -> {
-			try {
-				this.service.send(model);
-			} catch (Exception e) {
-				log.error("error while sending on_search reply", e);
-			}
-		});
+		if(isValidHeader) {
+			this.auditService.saveAudit(model.getContext(), this.jsonUtil.toJson(body));
+			
+			CompletableFuture.runAsync(() -> {
+				try {
+					this.service.send(model);
+				} catch (Exception e) {
+					log.error("error while sending on_search reply", e);
+				}
+			});
+
+		}
 
 		return this.responseBuilder.buildResponseEntity(model.getContext());
 	}

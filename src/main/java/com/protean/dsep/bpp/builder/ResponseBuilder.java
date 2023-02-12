@@ -12,7 +12,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.protean.beckn.api.enums.AckStatus;
 import com.protean.beckn.api.model.common.Ack;
+import com.protean.beckn.api.model.common.City;
 import com.protean.beckn.api.model.common.Context;
+import com.protean.beckn.api.model.common.ContextLocation;
+import com.protean.beckn.api.model.common.Country;
 import com.protean.beckn.api.model.response.Response;
 import com.protean.beckn.api.model.response.ResponseMessage;
 
@@ -33,7 +36,21 @@ public class ResponseBuilder {
 	}
 
 	public ResponseEntity<String> buildResponseEntity(Context ctx) throws JsonProcessingException {
+		ContextLocation location = new ContextLocation();
+		City city = new City();
+		city.setName("Bangalore");
+		city.setCode("std:080");
+		location.setCity(city);
+		
+		Country country = new Country();
+		country.setName("India");
+		country.setCode("IND");
+		location.setCountry(country);
+		
+		ctx.setLocation(location);
+		
 		String response = buildAckResponse(ctx);
+		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 

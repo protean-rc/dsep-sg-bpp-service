@@ -45,3 +45,12 @@ beckn:
    seller:
       id: http://localhost:8001/
       url: http://localhost:8001/public
+      keyid: http://localhost:8001/
+      algo: ed25519
+      uniqKeyId: protean_dsep_sg_bpp_1234
+      private-key: R33D4kpv9XlvHEnHPSINfdePagxRCLNw0yaqZ9BkJLg=
+      public-key: Fhjwaka1Za+ld+7Nms7S0C675r24mZoyWVn8JbYTjSs=
+   req:
+      auth: true
+      expiry:
+         time-in-sec: 600

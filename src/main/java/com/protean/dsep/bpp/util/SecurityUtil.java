@@ -1,5 +1,6 @@
 package com.protean.dsep.bpp.util;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,5 +35,12 @@ public class SecurityUtil {
 			return ipAddr;
 		}
 		return null;
+	}
+	
+	public boolean authorizeHeader(HttpHeaders httpHeaders) {
+		log.info("Validating request header - {}", httpHeaders);
+		boolean isValid = false;
+		
+		return isValid;
 	}
 }
