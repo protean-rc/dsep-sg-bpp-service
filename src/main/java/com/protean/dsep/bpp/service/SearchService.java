@@ -19,6 +19,7 @@ import com.protean.dsep.bpp.builder.OnSearchBuilder;
 import com.protean.dsep.bpp.builder.OnStatusBuilder;
 import com.protean.dsep.bpp.sender.Sender;
 import com.protean.dsep.bpp.util.JsonUtil;
+import com.protean.dsep.bpp.util.SecurityUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,12 +48,17 @@ public class SearchService {
 	@Autowired
 	AuditService auditService;
 	
+	@Autowired
+	SecurityUtil securityUtil;
+	
 	public void send(SearchRequest model) {
 
 		OnSearchRequest onSearchRequest = this.onSearchBuilder.buildOnSearch(model);
 
 		String json = this.jsonUtil.toJsonSnakeCase(onSearchRequest);
 
+		HttpHeaders headers = securityUtil.generateAuthHeader(json);
+				
 		this.auditService.updateTxnAudit(onSearchRequest.getContext().getMessageId(), onSearchRequest.getContext().getTransactionId(), ContextAction.SEARCH.value());
 		
 		this.auditService.saveAudit(onSearchRequest.getContext(), json);
@@ -61,7 +67,7 @@ public class SearchService {
 
 		log.info("reply with on_search json {}", json);
 
-		this.sender.send(url, new HttpHeaders(), json);
+		this.sender.send(url, headers, json);
 	}
 
 	public void send(InitRequest model) {
@@ -69,6 +75,8 @@ public class SearchService {
 		OnInitRequest onInitRequest = this.onInitBuilder.buildOnInit(model);
 
 		String json = this.jsonUtil.toJsonSnakeCase(onInitRequest);
+		
+		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 
 		this.auditService.updateTxnAudit(onInitRequest.getContext().getMessageId(), onInitRequest.getContext().getTransactionId(), ContextAction.INIT.value());
 		
@@ -78,7 +86,7 @@ public class SearchService {
 
 		log.info("reply with on_init json {}", json);
 
-		this.sender.send(url, new HttpHeaders(), json);
+		this.sender.send(url, headers, json);
 	}
 	
 	public void send(ConfirmRequest model) {
@@ -87,6 +95,8 @@ public class SearchService {
 
 		String json = this.jsonUtil.toJsonSnakeCase(onConfirmRequest);
 		
+		HttpHeaders headers = securityUtil.generateAuthHeader(json);
+		
 		this.auditService.updateTxnAudit(onConfirmRequest.getContext().getMessageId(), onConfirmRequest.getContext().getTransactionId(), ContextAction.CONFIRM.value());
 		
 		this.auditService.saveAudit(onConfirmRequest.getContext(), json);
@@ -94,7 +104,7 @@ public class SearchService {
 		String url = onConfirmRequest.getContext().getBapUri().concat(ContextAction.ON_CONFIRM.value());
 		log.info("reply with on_confirm json {}", json);
 
-		this.sender.send(url, new HttpHeaders(), json);
+		this.sender.send(url, headers, json);
 	}
 	
 	public void send(StatusRequest model) {
@@ -103,6 +113,8 @@ public class SearchService {
 
 		String json = this.jsonUtil.toJsonSnakeCase(onStatusRequest);
 		
+		HttpHeaders headers = securityUtil.generateAuthHeader(json);
+		
 		this.auditService.updateTxnAudit(onStatusRequest.getContext().getMessageId(), onStatusRequest.getContext().getTransactionId(), ContextAction.STATUS.value());
 		
 		this.auditService.saveAudit(onStatusRequest.getContext(), json);
@@ -110,7 +122,7 @@ public class SearchService {
 		String url = onStatusRequest.getContext().getBapUri().concat(ContextAction.ON_STATUS.value());
 		log.info("reply with on_status json {}", json);
 
-		this.sender.send(url, new HttpHeaders(), json);
+		this.sender.send(url, headers, json);
 	}
 }
 

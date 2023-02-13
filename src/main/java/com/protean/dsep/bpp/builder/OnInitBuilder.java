@@ -92,7 +92,7 @@ public class OnInitBuilder {
 			ApplicationDtlModel appModel = appService.initApplication(model);
 			if(appModel != null) {
 				order = initMsg.getOrder();
-				order.setId(appModel.getAppId());
+				//order.setId(appModel.getAppId());
 				
 				State appState = new State();
 				Descriptor appStatusDesc = new Descriptor();

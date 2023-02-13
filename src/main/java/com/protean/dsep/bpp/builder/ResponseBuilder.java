@@ -1,5 +1,7 @@
 package com.protean.dsep.bpp.builder;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,8 +18,10 @@ import com.protean.beckn.api.model.common.City;
 import com.protean.beckn.api.model.common.Context;
 import com.protean.beckn.api.model.common.ContextLocation;
 import com.protean.beckn.api.model.common.Country;
+import com.protean.beckn.api.model.common.Error;
 import com.protean.beckn.api.model.response.Response;
 import com.protean.beckn.api.model.response.ResponseMessage;
+import com.protean.dsep.bpp.exception.ErrorCode;
 
 @Service
 public class ResponseBuilder {
@@ -66,8 +70,51 @@ public class ResponseBuilder {
 		resMsg.setAck(new Ack(AckStatus.ACK));
 		response.setMessage(resMsg);
 
+		context.setTimestamp(LocalDateTime.now().toString());
+		
 		response.setContext(context);
 		return this.snakeCaseMapper.writeValueAsString(response);
 	}
 
+	public ResponseEntity<String> buildNACKResponseEntity(Context ctx, String error) throws JsonProcessingException {
+		ContextLocation location = new ContextLocation();
+		City city = new City();
+		city.setName("Bangalore");
+		city.setCode("std:080");
+		location.setCity(city);
+		
+		Country country = new Country();
+		country.setName("India");
+		country.setCode("IND");
+		location.setCountry(country);
+		
+		ctx.setLocation(location);
+		
+		String response = buildNACKResponse(ctx, error);
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		return ResponseEntity.ok()
+				.headers(headers)
+				.body(response);
+	}
+	
+	private String buildNACKResponse(Context context, String error) throws JsonProcessingException {
+		Response response = new Response();
+		ResponseMessage resMsg = new ResponseMessage();
+
+		resMsg.setAck(new Ack(AckStatus.NACK));
+		response.setMessage(resMsg);
+		
+		com.protean.beckn.api.model.common.Error err = new Error();
+		err.setCode(error);
+		err.setMessage(ErrorCode.CODE_MSG.get(error));
+		response.setError(err);
+		
+		context.setTimestamp(LocalDateTime.now().toString());
+		
+		response.setContext(context);
+		return this.snakeCaseMapper.writeValueAsString(response);
+	}
 }

@@ -62,6 +62,17 @@ public class SigningUtil {
 			log.info("requestData \n"+requestData);
 			log.info("dbPublicKey "+dbPublicKey);
 			
+			/*Ed25519PublicKeyParameters publicKey = new Ed25519PublicKeyParameters(Base64.getDecoder().decode(dbPublicKey), 0);
+			Signer sv = new Ed25519Signer();
+			sv.init(false, publicKey);
+	        sv.update(requestData.getBytes(), 0, requestData.length());
+	        
+	        byte[] decodedSign = Base64.getDecoder().decode(sign);
+	        isVerified = sv.verifySignature(decodedSign);
+			log.info("signature verification result:{}", isVerified);*/
+			
+			System.out.println("Sign : " + sign + " requestData : " + requestData + " PublicKey : " + dbPublicKey);
+			//Ed25519PublicKeyParameters publicKey = new Ed25519PublicKeyParameters(Hex.decode(dbPublicKey), 0);
 			Ed25519PublicKeyParameters publicKey = new Ed25519PublicKeyParameters(Base64.getDecoder().decode(dbPublicKey), 0);
 			Signer sv = new Ed25519Signer();
 			sv.init(false, publicKey);
@@ -69,7 +80,7 @@ public class SigningUtil {
 	        
 	        byte[] decodedSign = Base64.getDecoder().decode(sign);
 	        isVerified = sv.verifySignature(decodedSign);
-			log.info("signature verification result:{}", isVerified);
+	        log.info("Is signature verified : {}", isVerified);
 			
 		} catch (Exception e) {
 			log.error("Exception occurred while verifying signature-",e);
@@ -116,7 +127,7 @@ public class SigningUtil {
 		return keyIdDto;
 	}
 	
-	public static HeaderParams splitHeadersParam(String headers) throws HeaderValidationFailedException
+	public static HeaderParams splitHeadersParam(String headers, Map<String, String> authMap) throws HeaderValidationFailedException
 	{
 		log.info("@inside splitHeadersParam : {}",headers);
 		HeaderParams headerParams  = null;
@@ -130,6 +141,42 @@ public class SigningUtil {
 					headerParams.setCreated(a[0].replace("(", "").replace(")", ""));
 					headerParams.setExpires(a[1].replace("(", "").replace(")", ""));
 					headerParams.setDiagest(a[2].trim());
+					if(!(headerParams.getCreated()!=null && authMap.get("created").replace("\"", "").equalsIgnoreCase(headerParams.getCreated()) 
+							&& headerParams.getExpires()!=null && authMap.get("expires").replace("\"", "").equalsIgnoreCase(headerParams.getExpires())
+							&& headerParams.getDiagest()!=null && "digest".equalsIgnoreCase(headerParams.getDiagest()))) {
+						log.error("Header sequense mismatch");
+						throw new HeaderValidationFailedException("Header sequense mismatch");
+					}
+
+				}else {
+					log.error("Invalid Header");
+					throw new HeaderValidationFailedException("Invalid Header");
+				}
+				
+			}
+		} catch (Exception e) {
+			log.error("Exception occurred while authorizing header parameters-",e);
+			throw new HeaderValidationFailedException("Header parsing Failed");
+		}
+		
+		return headerParams;
+	}
+	
+	/*public static HeaderParams splitHeadersParam(String headers) throws HeaderValidationFailedException
+	{
+		log.info("@inside splitHeadersParam : {}",headers);
+		HeaderParams headerParams  = null;
+		try {
+			if(headers!=null && !headers.isEmpty()) {
+				headers = headers.replace("\"", "");
+				headerParams = new HeaderParams();
+				
+				String[] a = headers.split(" ");
+				if(a!=null && a.length > 2) {
+					headerParams.setCreated(a[0].replace("(", "").replace(")", ""));
+					headerParams.setExpires(a[1].replace("(", "").replace(")", ""));
+					headerParams.setDiagest(a[2].trim());
+
 					if(!(headerParams.getCreated()!=null && "created".equalsIgnoreCase(headerParams.getCreated()) 
 							&& headerParams.getExpires()!=null && "expires".equalsIgnoreCase(headerParams.getExpires())
 							&& headerParams.getDiagest()!=null && "digest".equalsIgnoreCase(headerParams.getDiagest()))) {
@@ -148,9 +195,12 @@ public class SigningUtil {
 		}
 		
 		return headerParams;
-	}
+	}*/
+	
 	
 	public String generateBlakeHash(String req) {
+		log.info("Creating digest for below:");
+		log.info(req);
 		Blake2bDigest blake2bDigest = new Blake2bDigest(512);
     	
     	byte[] test = req.getBytes();

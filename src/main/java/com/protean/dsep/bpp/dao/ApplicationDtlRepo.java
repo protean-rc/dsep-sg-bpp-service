@@ -19,4 +19,6 @@ public interface ApplicationDtlRepo extends JpaRepository<DsepApplicationDtl, St
 	List<DsepApplicationDtl> findByDadDeletedOrderByUpdatedAtDesc(boolean isDeleted);
 
 	List<DsepApplicationDtl> findByDadAppStatusNotAndDadDeletedOrderByUpdatedAtDesc(int status, boolean isDeleted); 
+	
+	DsepApplicationDtl findByDadDsepTxnId(String txnID);
 }

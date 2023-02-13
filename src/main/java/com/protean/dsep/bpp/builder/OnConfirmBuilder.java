@@ -87,9 +87,10 @@ public class OnConfirmBuilder {
 		Order order = null;
 		
 		try {
-			ApplicationDtlModel model = appService.getDetailsByAppID(confirmMsg.getOrder().getId());
+			//ApplicationDtlModel model = appService.getDetailsByAppID(confirmMsg.getOrder().getId());
+			ApplicationDtlModel model = appService.getDetailsByTxnID(txnID);
 			if(model == null) {
-				throw new EntityNotFoundException(confirmMsg.getOrder().getId());
+				throw new EntityNotFoundException(txnID);
 			}
 
 			SchemeModel scheme = schemeService.getDetailsBySchemeID(confirmMsg.getOrder().getProvider().getItems().get(0).getId());
@@ -123,7 +124,7 @@ public class OnConfirmBuilder {
 			ApplicationDtlModel appModel = appService.confirmApplication(model);
 			if(appModel != null) {
 				order = confirmMsg.getOrder();
-				
+				order.setId(appModel.getAppId());
 				State appState = new State();
 				Descriptor appStatusDesc = new Descriptor();
 				appStatusDesc.setCode(ApplicationStatus.APPSTATUS.get(appModel.getAppStatus()));

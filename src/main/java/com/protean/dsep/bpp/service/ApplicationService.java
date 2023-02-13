@@ -229,6 +229,24 @@ public class ApplicationService {
 		return appDtls;
 	}
 
+	public ApplicationDtlModel getDetailsByTxnID(String txnID) {
+		ApplicationDtlModel appDtls = null;
+
+		try {
+			DsepApplicationDtl entity = this.appDtlRepo.findByDadDsepTxnId(txnID);
+			if (entity != null) {
+				appDtls = this.commonBuilder.buildApplicationDtlModel(entity);
+			} else {
+				throw new EntityNotFoundException(txnID);
+			}
+
+		} catch (Exception e) {
+			throw e;
+		}
+
+		return appDtls;
+	}
+	
 	public ApplicationDtlModel getDetailsByID(String appID) {
 		ApplicationDtlModel appDtls = null;
 

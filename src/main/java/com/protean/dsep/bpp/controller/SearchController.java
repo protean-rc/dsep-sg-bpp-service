@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.protean.beckn.api.model.search.SearchRequest;
 import com.protean.dsep.bpp.builder.ResponseBuilder;
+import com.protean.dsep.bpp.exception.ErrorCode;
+import com.protean.dsep.bpp.exception.InvalidUserException;
 import com.protean.dsep.bpp.service.AuditService;
 import com.protean.dsep.bpp.service.SearchService;
 import com.protean.dsep.bpp.util.JsonUtil;
@@ -47,19 +49,26 @@ public class SearchController {
 	private boolean isAuthReq;
 	
 	@PostMapping("/search")
-	public ResponseEntity<String> search(@RequestBody SearchRequest body, @RequestHeader HttpHeaders httpHeaders) throws JsonProcessingException {
-		log.info("The body in mock seller is {}", body);
+	public ResponseEntity<String> search(@RequestBody String body, @RequestHeader HttpHeaders httpHeaders) throws JsonProcessingException {
+		log.info("The request body recieved - {}", body);
 		log.info("isAuthReq ==> {}",isAuthReq);
-		//SearchRequest model = this.jsonUtil.toModelSnakeCase(body, SearchRequest.class);
-		SearchRequest model = body;
+		SearchRequest model = this.jsonUtil.toModelSnakeCase(body, SearchRequest.class);
+		//SearchRequest model = body;
 		boolean isValidHeader = true;
+		String requestBody = body;
 		
 		if(isAuthReq) {
-			isValidHeader = securityUtil.authorizeHeader(httpHeaders);
+			try {
+				isValidHeader = securityUtil.authorizeHeader(httpHeaders, requestBody);
+			} catch (InvalidUserException e) {
+				log.error("Auth header verification failed:",e.getMessage());
+				return this.responseBuilder.buildNACKResponseEntity(model.getContext(), e.getMessage());
+			}
 		}
 		
 		if(isValidHeader) {
-			this.auditService.saveAudit(model.getContext(), this.jsonUtil.toJson(body));
+			log.info("Authentication Successful!");
+			this.auditService.saveAudit(model.getContext(), requestBody);
 			
 			CompletableFuture.runAsync(() -> {
 				try {

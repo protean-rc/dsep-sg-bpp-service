@@ -281,7 +281,7 @@ public class OnSearchBuilder {
 				
 				bppFulfillments.add(fulfillment);
 				item.setFulfillmentId(fulfillment.getId());
-				item.setMatched(Boolean.TRUE);				
+				//item.setMatched(Boolean.TRUE);				
 				replyItemList.add(item);
 			}
 			
