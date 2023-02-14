@@ -26,6 +26,7 @@ import com.protean.dsep.bpp.model.ApplicationDtlModel;
 import com.protean.dsep.bpp.model.SchemeModel;
 import com.protean.dsep.bpp.service.ApplicationService;
 import com.protean.dsep.bpp.service.SchemeService;
+import com.protean.dsep.bpp.util.CommonUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +42,9 @@ public class OnInitBuilder {
 	
 	@Autowired
 	private SchemeService schemeService;
+	
+	@Autowired
+	CommonUtil commonUtil;
 	
 	@Value("${beckn.seller.url}")
 	private String sellerUrl;
@@ -69,7 +73,7 @@ public class OnInitBuilder {
 			replyModel.setError(error);
 		}
 
-		context.setTimestamp(String.valueOf(new Timestamp(System.currentTimeMillis())));
+		context.setTimestamp(commonUtil.getDateTimeString());
 		replyModel.setContext(context);
 		
 		return replyModel;

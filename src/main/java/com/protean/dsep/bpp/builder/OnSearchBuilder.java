@@ -36,6 +36,7 @@ import com.protean.beckn.api.model.search.SearchRequest;
 import com.protean.dsep.bpp.constant.InternalConstant;
 import com.protean.dsep.bpp.dao.BppDao;
 import com.protean.dsep.bpp.dao.SchemeCategoryRepo;
+import com.protean.dsep.bpp.util.CommonUtil;
 import com.protean.dsep.bpp.util.JsonUtil;
 import com.protean.dsep.bpp.entity.DsepScheme;
 import com.protean.dsep.bpp.entity.DsepSchemeCategory;
@@ -61,6 +62,9 @@ public class OnSearchBuilder {
 	@Autowired
 	private JsonUtil jsonUtil;
 	
+	@Autowired
+	CommonUtil commonUtil;
+	
 	@Value("${beckn.seller.url}")
 	private String sellerUrl;
 
@@ -80,7 +84,7 @@ public class OnSearchBuilder {
 
 		message.setCatalog(buildSchemeCatalog(request.getMessage()));
 
-		context.setTimestamp(String.valueOf(new Timestamp(System.currentTimeMillis())));
+		context.setTimestamp(commonUtil.getDateTimeString());
 		replyModel.setContext(context);
 		replyModel.setMessage(message);
 		return replyModel;

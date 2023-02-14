@@ -19,7 +19,9 @@ public class InternalConstant {
 	
 	public static final String SCHEME_DATE_FORMAT = "yyyy-MM-dd";
 	
-	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd hh:mm:ss.SSS";
+	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+	
+	public static final String DSEP_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 	
 	public static final String INTENT_TYPE_SCHEME_NAME = "SCHEME_NAME";
 	

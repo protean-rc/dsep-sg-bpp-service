@@ -1,56 +1,52 @@
 server:
-    port: 8001
-    
+   port: 8001
+
 spring:
-    datasource:
-        url: jdbc:postgresql://localhost:5432/dsep-bpp-new
-        username: postgres
-        password: postgres
-        
-    jpa:  
-        database-platform: org.hibernate.dialect.PostgreSQLDialect
-        hibernate:  
-            ddl-auto: none
-            show-sql: true  
-    mvc:
-       pathmatch:
-            matching-strategy: ant_path_matcher       
+   datasource:
+      url: jdbc:postgresql://localhost:5432/dsep-bpp-new
+      username: postgres
+      password: postgres
+   jpa:
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
+      hibernate:
+         ddl-auto: none
+         show-sql: true
+   mvc:
+      pathmatch:
+         matching-strategy: ant_path_matcher
 servlet:
-    multipart:
-        enabled: true
-        file-size-threshold: 10KB
-        max-file-size: 200MB
-        max-request-size: 250MB       
-        
+   multipart:
+      enabled: true
+      file-size-threshold: 10KB
+      max-file-size: 200MB
+      max-request-size: 250MB
 logging:
-    file: 
-        name: /opt/DSEP/logs/BPP/dsep-sg-bpp-service/dsep-sg-bpp-service.log
-    max-size: 2048
-    max-history: 5
-    path: /opt/DSEP/logs/BPP/dsep-sg-bpp-service
-    level:
-        root: ERROR
-        org.springframework.web: ERROR
-        com.protean.dsep.bpp: INFO
-        org.hibernate: ERROR
-        
+   file:
+      name: /opt/DSEP/logs/BPP/dsep-sg-bpp-service/dsep-sg-bpp-service.log
+   max-size: 2048
+   max-history: 5
+   path: /opt/DSEP/logs/BPP/dsep-sg-bpp-service
+   level:
+      root: ERROR
+      org.springframework.web: ERROR
+      com.protean.dsep.bpp: INFO
+      org.hibernate: ERROR
 xinput:
-    form: 
-        base_url: http://localhost:8001/public/getForm
+   form:
+      base_url: http://localhost:8001/public/getForm
 dsep:
    scholarship_grant:
-        providerId: BYV88216981
-    
+      providerId: BX213573733
+
 beckn:
    seller:
       id: http://localhost:8001/
       url: http://localhost:8001/public
-      keyid: http://localhost:8001/
       algo: ed25519
       uniqKeyId: protean_dsep_sg_bpp_1234
       private-key: R33D4kpv9XlvHEnHPSINfdePagxRCLNw0yaqZ9BkJLg=
       public-key: Fhjwaka1Za+ld+7Nms7S0C675r24mZoyWVn8JbYTjSs=
    req:
-      auth: true
+      auth: false
       expiry:
          time-in-sec: 600

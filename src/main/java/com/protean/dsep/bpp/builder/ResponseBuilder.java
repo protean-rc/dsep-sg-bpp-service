@@ -22,6 +22,7 @@ import com.protean.beckn.api.model.common.Error;
 import com.protean.beckn.api.model.response.Response;
 import com.protean.beckn.api.model.response.ResponseMessage;
 import com.protean.dsep.bpp.exception.ErrorCode;
+import com.protean.dsep.bpp.util.CommonUtil;
 
 @Service
 public class ResponseBuilder {
@@ -33,6 +34,9 @@ public class ResponseBuilder {
 	@Value("${beckn.seller.url}")
 	private String sellerUrl;
 
+	@Autowired
+	CommonUtil commonUtil;
+	
 	public Context buildContext(Context context, String action) {
 		context.setAction(action);
 		context.setBppUri(this.sellerUrl);
@@ -70,7 +74,7 @@ public class ResponseBuilder {
 		resMsg.setAck(new Ack(AckStatus.ACK));
 		response.setMessage(resMsg);
 
-		context.setTimestamp(LocalDateTime.now().toString());
+		context.setTimestamp(commonUtil.getDateTimeString());
 		
 		response.setContext(context);
 		return this.snakeCaseMapper.writeValueAsString(response);
@@ -112,7 +116,7 @@ public class ResponseBuilder {
 		err.setMessage(ErrorCode.CODE_MSG.get(error));
 		response.setError(err);
 		
-		context.setTimestamp(LocalDateTime.now().toString());
+		context.setTimestamp(commonUtil.getDateTimeString());
 		
 		response.setContext(context);
 		return this.snakeCaseMapper.writeValueAsString(response);
