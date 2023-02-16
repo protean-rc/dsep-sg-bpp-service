@@ -1,6 +1,8 @@
 package com.protean.dsep.bpp.builder;
 
 import java.sql.Timestamp;
+import java.util.Date;
+
 import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,14 +10,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.protean.beckn.api.enums.ContextAction;
 import com.protean.beckn.api.enums.ErrorCode;
+import com.protean.beckn.api.enums.OrderStatus;
 import com.protean.beckn.api.model.common.Context;
 import com.protean.beckn.api.model.common.Descriptor;
 import com.protean.beckn.api.model.common.Error;
 import com.protean.beckn.api.model.common.Form;
 import com.protean.beckn.api.model.common.Order;
-import com.protean.beckn.api.model.common.State;
+import com.protean.beckn.api.model.common.OrderState;
 import com.protean.beckn.api.model.common.XInput;
-import com.protean.beckn.api.model.common.XInputRequired;
 import com.protean.beckn.api.model.confirm.ConfirmMessage;
 import com.protean.beckn.api.model.confirm.ConfirmRequest;
 import com.protean.beckn.api.model.onconfirm.OnConfirmMessage;
@@ -26,6 +28,8 @@ import com.protean.dsep.bpp.model.ApplicationDtlModel;
 import com.protean.dsep.bpp.model.SchemeModel;
 import com.protean.dsep.bpp.service.ApplicationService;
 import com.protean.dsep.bpp.service.SchemeService;
+import com.protean.dsep.bpp.util.CommonUtil;
+import com.protean.dsep.bpp.util.JsonUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +45,12 @@ public class OnConfirmBuilder {
 	
 	@Autowired
 	ApplicationService appService;
+	
+	@Autowired
+	CommonUtil commonUtil;
+	
+	@Autowired
+	JsonUtil jsonUtil;
 	
 	@Value("${beckn.seller.url}")
 	private String sellerUrl;
@@ -76,7 +86,7 @@ public class OnConfirmBuilder {
 			replyModel.setError(error);
 		}
 
-		context.setTimestamp(String.valueOf(new Timestamp(System.currentTimeMillis())));
+		context.setTimestamp(commonUtil.getDateTimeString(new Date()));
 		replyModel.setContext(context);
 		
 		return replyModel;
@@ -87,16 +97,103 @@ public class OnConfirmBuilder {
 		Order order = null;
 		
 		try {
-			ApplicationDtlModel model = appService.getDetailsByAppID(confirmMsg.getOrder().getId());
+			
+			/*ApplicationDtlModel model = new ApplicationDtlModel();
+			SchemeModel scheme = schemeService.getDetailsBySchemeID(confirmMsg.getOrder().getItems().get(0).getId());
+			model.setSchemeProviderId(confirmMsg.getOrder().getProvider().getId());
+			model.setSchemeId(scheme.getId().toString());
+			model.setApplcntId(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
+			model.setApplcntDtls(confirmMsg.getOrder());
+			model.setDsepTxnId(txnID);
+			model.setCreatedBy(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());*/
+			
+			ApplicationDtlModel model = appService.getDetailsByTxnID(txnID);
 			if(model == null) {
-				throw new EntityNotFoundException(confirmMsg.getOrder().getId());
+				throw new EntityNotFoundException(txnID);
+			}
+			
+			model.setApplcntId(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
+			model.setApplcntDtls(confirmMsg.getOrder().getFulfillments().get(0).getCustomer());
+			model.setDsepTxnId(txnID);
+			model.setCreatedBy(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
+			
+			SchemeModel scheme = schemeService.getDetailsBySchemeID(confirmMsg.getOrder().getItems().get(0).getId());
+			
+			if(scheme.isAddtnlInfoReq()) {
+				if(confirmMsg.getOrder().getItems().get(0).getXinput() != null 
+						&& confirmMsg.getOrder().getItems().get(0).getXinput().getForm() != null ) {
+					Object addtnlDtls = confirmMsg.getOrder().getItems().get(0).getXinput().getForm().getData();
+					String addInfoSubmsnID = confirmMsg.getOrder().getItems().get(0).getXinput().getForm().getSubmissionId();
+					log.info("XInput Additional Details: {}",addtnlDtls);
+					
+					if (addtnlDtls != null){
+						model.setAddtnlDtls(jsonUtil.toJson(addtnlDtls));
+						model.setAddtnlInfoSubmsnId(addInfoSubmsnID);
+						model.setAppStatus(ApplicationStatus.INPROGRESS.value());
+						model.setRemarks("Application accepted.");
+					}else if (addtnlDtls == null && (addInfoSubmsnID != null && !addInfoSubmsnID.isEmpty())) {
+						if(addInfoSubmsnID.trim().equalsIgnoreCase(model.getAddtnlInfoSubmsnId())) {
+							model.setAppStatus(ApplicationStatus.INPROGRESS.value());
+							model.setRemarks("Application accepted.");
+						}else {
+							model.setAppStatus(ApplicationStatus.REJECTED.value());
+							model.setRemarks("Application rejected as additional info submission id is invalid");
+						}						
+					}else {
+						model.setAppStatus(ApplicationStatus.REJECTED.value());
+						model.setRemarks("Application rejected as additional info is not provided.");
+					}
+				}else {
+					model.setAppStatus(ApplicationStatus.REJECTED.value());
+					model.setRemarks("Application rejected as additional info is not provided.");
+				}
+				
+			}else {
+				model.setAppStatus(ApplicationStatus.INPROGRESS.value());
+				model.setRemarks("Application accepted.");
+			}
+			
+			ApplicationDtlModel appModel = appService.confirmApplication(model);
+			//ApplicationDtlModel appModel = appService.initApplication(model);
+			
+			if(appModel != null) {
+				order = confirmMsg.getOrder();
+				order.setId(appModel.getAppId());
+				if(appModel.getAppStatus() == ApplicationStatus.REJECTED.value()) {
+					order.setStatus(OrderStatus.CANCELLED.value());
+				}else {
+					order.setStatus(OrderStatus.ACTIVE.value());
+				}
+				
+			} else {
+				throw new Exception("Exception occured while confirming order.");
+			}
+			
+			
+		} catch (Exception e) {
+			log.error("Exception occurred while creating CONFIRM order - ",e);
+			throw e;
+		}
+		
+		return order;
+	}
+	
+	/*
+	private Order buildOrder(String txnID, ConfirmMessage confirmMsg) throws Exception {
+		log.info("Recieved confirm application details: {}", confirmMsg);
+		Order order = null;
+		
+		try {
+			ApplicationDtlModel model = appService.getDetailsByTxnID(txnID);
+			if(model == null) {
+				throw new EntityNotFoundException(txnID);
 			}
 
 			SchemeModel scheme = schemeService.getDetailsBySchemeID(confirmMsg.getOrder().getProvider().getItems().get(0).getId());
 			if(scheme.isAddtnlInfoReq()) {
-				if(confirmMsg.getOrder().getProvider().getItems().get(0).getXinputRequired() != null 
-						&& confirmMsg.getOrder().getProvider().getItems().get(0).getXinputRequired().getXinput().getForm() != null ) {
-					String addInfoSubmsnID = confirmMsg.getOrder().getProvider().getItems().get(0).getXinputRequired().getXinput().getForm().getSubmissionId();
+				if(confirmMsg.getOrder().getProvider().getItems().get(0).getXinput() != null 
+						&& confirmMsg.getOrder().getProvider().getItems().get(0).getXinput().getForm() != null ) {
+					String addInfoSubmsnID = confirmMsg.getOrder().getProvider().getItems().get(0).getXinput().getForm().getSubmissionId();
 					log.info("Additional Info Submission ID: {}",addInfoSubmsnID);
 					if(addInfoSubmsnID == null || addInfoSubmsnID.isEmpty() || !addInfoSubmsnID.trim().equalsIgnoreCase(model.getAddtnlInfoSubmsnId())) {
 						model.setAppStatus(ApplicationStatus.REJECTED.value());
@@ -123,14 +220,11 @@ public class OnConfirmBuilder {
 			ApplicationDtlModel appModel = appService.confirmApplication(model);
 			if(appModel != null) {
 				order = confirmMsg.getOrder();
-				
-				State appState = new State();
+				order.setId(appModel.getAppId());
+				OrderState appState = new OrderState();
 				Descriptor appStatusDesc = new Descriptor();
-				appStatusDesc.setCode(ApplicationStatus.APPSTATUS.get(appModel.getAppStatus()));
-				appStatusDesc.setShortDesc(appModel.getRemarks());
-				appState.setUpdatedAt(appModel.getUpdatedAt());
-				appState.setUpdatedBy(appModel.getUpdatedBy());
-				appState.setDescriptor(appStatusDesc);
+				appState.setCode(String.valueOf(appModel.getAppStatus()));
+				appState.setName(ApplicationStatus.APPSTATUS.get(appModel.getAppStatus()));
 				order.getProvider().getFulfillments().get(0).setState(appState);
 				
 				if(scheme.isAddtnlInfoReq()) {
@@ -138,9 +232,7 @@ public class OnConfirmBuilder {
 					Form xinForm = new Form();
 					xinForm.setSubmissionId(appModel.getAddtnlInfoSubmsnId());
 					xinput.setForm(xinForm);
-					XInputRequired xinReq = new XInputRequired();
-					xinReq.setXinput(xinput);
-					order.getProvider().getItems().get(0).setXinputRequired(xinReq);
+					order.getProvider().getItems().get(0).setXinput(xinput);
 				}
 				
 			} else {
@@ -155,5 +247,5 @@ public class OnConfirmBuilder {
 		
 		return order;
 	}
-
+	*/
 }

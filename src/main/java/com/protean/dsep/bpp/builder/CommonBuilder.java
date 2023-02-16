@@ -13,6 +13,7 @@ import com.protean.dsep.bpp.util.JsonUtil;
 import net.bytebuddy.utility.RandomString;
 
 import com.protean.beckn.api.model.common.Customer;
+import com.protean.beckn.api.model.common.Order;
 import com.protean.dsep.bpp.constant.InternalConstant;
 import com.protean.dsep.bpp.entity.ApplicationDtlsView;
 import com.protean.dsep.bpp.entity.DsepApplicationDtl;
@@ -157,7 +158,7 @@ public class CommonBuilder {
 		entity.setDadAddtnlDtls(model.getAddtnlDtls());
 		entity.setDadAddtnlInfoSubmsnId(model.getAddtnlInfoSubmsnId());
 		entity.setDadApplcntId(model.getApplcntId());
-		entity.setDadApplcntDtls(jsonUtil.toJson(model.getApplcntDtls()));
+		entity.setDadApplcntDtls(model.getApplcntDtls() != null ? jsonUtil.toJson(model.getApplcntDtls()):null);
 		entity.setDadAppStatus(model.getAppStatus());
 		entity.setDadDeleted(model.isDeleted());
 		entity.setDadSchemeId(model.getSchemeId());
@@ -181,7 +182,7 @@ public class CommonBuilder {
 		model.setAddtnlDtls(entity.getDadAddtnlDtls());
 		model.setAddtnlInfoSubmsnId(entity.getDadAddtnlInfoSubmsnId());
 		model.setApplcntId(entity.getDadApplcntId());
-		model.setApplcntDtls(jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class));
+		model.setApplcntDtls(entity.getDadApplcntDtls() != null ? jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class):null);
 		model.setAppStatus(entity.getDadAppStatus());
 		model.setDeleted(entity.getDadDeleted());
 		model.setSchemeId(entity.getDadSchemeId());
@@ -202,7 +203,7 @@ public class CommonBuilder {
 		model.setId(entity.getDadId());
 		model.setAppId(entity.getDadAppId());
 		model.setAppStatus(entity.getDadAppStatus());
-		model.setApplcntDtls(jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class));
+		model.setApplcntDtls(entity.getDadApplcntDtls() != null ? jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class) : null);
 		model.setApplcntId(entity.getDadApplcntId());
 		model.setAddtnlDtls(entity.getDadAddtnlDtls());
 		model.setAddtnlInfoId(entity.getDadAddtnlInfoId());

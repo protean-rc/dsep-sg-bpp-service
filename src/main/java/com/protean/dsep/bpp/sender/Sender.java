@@ -21,7 +21,7 @@ public class Sender {
 
 	public void send(String url, HttpHeaders headers, String json) {
 
-		log.info("calling bpp adaptor at url {}", url);
+		log.info("calling bap url {}", url);
 		try {
 			Mono<String> response = this.webClient.post()
 					.uri(url)

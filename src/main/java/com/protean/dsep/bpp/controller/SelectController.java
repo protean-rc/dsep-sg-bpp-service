@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.protean.beckn.api.model.search.SearchRequest;
+import com.protean.beckn.api.model.select.SelectRequest;
 import com.protean.dsep.bpp.builder.ResponseBuilder;
 import com.protean.dsep.bpp.exception.ErrorCode;
 import com.protean.dsep.bpp.exception.InvalidUserException;
@@ -28,7 +29,7 @@ import static com.protean.dsep.bpp.constant.ApplicationConstant.EXTERNAL_CONTEXT
 @RestController
 @Slf4j
 @RequestMapping(EXTERNAL_CONTEXT_ROOT)
-public class SearchController {
+public class SelectController {
 
 	@Autowired
 	private JsonUtil jsonUtil;
@@ -48,11 +49,11 @@ public class SearchController {
 	@Value("${beckn.req.auth}")
 	private boolean isAuthReq;
 	
-	@PostMapping("/search")
+	@PostMapping("/select")
 	public ResponseEntity<String> search(@RequestBody String body, @RequestHeader HttpHeaders httpHeaders) throws JsonProcessingException {
-		log.info("The body in search request - {}", body);
+		log.info("The body in select request - {}", body);
 		log.info("isAuthReq ==> {}",isAuthReq);
-		SearchRequest model = this.jsonUtil.toModelSnakeCase(body, SearchRequest.class);
+		SelectRequest model = this.jsonUtil.toModelSnakeCase(body, SelectRequest.class);
 		//SearchRequest model = body;
 		boolean isValidHeader = true;
 		String requestBody = body;
@@ -74,7 +75,7 @@ public class SearchController {
 				try {
 					this.service.send(model);
 				} catch (Exception e) {
-					log.error("error while sending on_search reply", e);
+					log.error("error while sending on_select reply", e);
 				}
 			});
 

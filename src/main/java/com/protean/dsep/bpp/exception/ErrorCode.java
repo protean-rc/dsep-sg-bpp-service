@@ -1,5 +1,8 @@
 package com.protean.dsep.bpp.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum ErrorCode {
 	SUBSCRIBER_NOT_FOUND(1000, "Subscriber not found"),
 	AUTH_FAILED(1005, "Authentication failed"),
@@ -23,7 +26,7 @@ public enum ErrorCode {
 	INVALID_CONTENT_TYPE(1090, "Invalid content type. Only application/json allowed"),
 	HEADER_SEQ_MISMATCH(1095, "Header sequence mismatched"),
 	HEADER_PARSING_FAILED(1100, "Header parsing failed"),
-	INVALID_BPP(1105, "BPP is not valid/not registered in NSDL system"),
+	INVALID_BPP(1105, "BPP is not valid/not registered in system"),
 	JSON_PROCESSING_ERROR(1110, "Issue while preparing the json"),
 	INVALID_ENTITY_TYPE(1115, "Invalid entity type configured in config file"),
 	HTTP_TIMEOUT_ERROR(1120, "Http timeout error"),
@@ -39,12 +42,19 @@ public enum ErrorCode {
 	INVALID_PROXY_AUTH_HEADER(2003, "The proxy auth header is not valid"),
 	PROXY_ALGORITHM_MISMATCH(2005, "There is mismatch in the algorithm of proxy header"),
 	PROXY_REQUEST_EXPIRED(2006, "The proxy request has expired"),
-	INVALID_PROXY_HEADERS_PARAM(2007, "Invalid headers are present in proxy header parameters"),
-	;
+	INVALID_PROXY_HEADERS_PARAM(2007, "Invalid headers are present in proxy header parameters");
 
 	private int code;
 	private String message;
+	
+	public static final Map<String, String> CODE_MSG = new HashMap<>();
 
+	static {
+		for (ErrorCode c : values()) {
+			CODE_MSG.put(String.valueOf(c.code), c.message);
+		}
+	}
+	
 	ErrorCode(final int errorCode, final String errorMessage) {
 		this.code = errorCode;
 		this.message = errorMessage;

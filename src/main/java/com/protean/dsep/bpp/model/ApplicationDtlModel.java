@@ -3,6 +3,7 @@ package com.protean.dsep.bpp.model;
 import java.util.UUID;
 
 import com.protean.beckn.api.model.common.Customer;
+import com.protean.beckn.api.model.common.Order;
 
 import lombok.Data;
 

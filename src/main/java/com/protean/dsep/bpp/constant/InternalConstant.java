@@ -19,7 +19,9 @@ public class InternalConstant {
 	
 	public static final String SCHEME_DATE_FORMAT = "yyyy-MM-dd";
 	
-	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd hh:mm:ss.SSS";
+	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+	
+	public static final String DSEP_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 	
 	public static final String INTENT_TYPE_SCHEME_NAME = "SCHEME_NAME";
 	
@@ -31,9 +33,9 @@ public class InternalConstant {
 	
 	public static final String INTENT_TYPE_GENDER_COURSE_CAT = "GENDER_COURSE_CAT";
 	
-	public static final String CATALOG_SCHEME_ELG_ACAD_QUAL_CODE = "academic_qualifications";
+	public static final String CATALOG_SCHEME_ELG_ACAD_QUAL_CODE = "edu_qual";
 
-	public static final String CATALOG_SCHEME_ELG_ACAD_QUAL_NAME = "Academic Qualifications";
+	public static final String CATALOG_SCHEME_ELG_ACAD_QUAL_NAME = "Academic Eligibility";
 	
 	public static final String CATALOG_SCHEME_ELG_PERCTG_GRAD_CODE = "percentage_grade";
 
@@ -58,5 +60,17 @@ public class InternalConstant {
 	public static final String FW_SLASH = "/";
 	
 	public static final String BLANK = "";
+	
+	public static final String APPLICATION_START = "APPLICATION-START";
+	
+	public static final String APPLICATION_END = "APPLICATION-END";
+	
+	public static final String CATALOG_SCHEME_BENEFITS_CODE = "benefits";
+	
+	public static final String CATALOG_SCHEME_BENEFITS_NAME = "Benefits";
+	
+	public static final String CATALOG_SCHEME_BENEFITS_AMT_CODE = "scholarship-amount";
+	
+	public static final String CATALOG_SCHEME_BENEFITS_AMT_NAME = "Scholarship Amount";
 	
 }

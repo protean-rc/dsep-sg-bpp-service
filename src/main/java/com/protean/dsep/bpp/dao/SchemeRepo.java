@@ -23,6 +23,8 @@ public interface SchemeRepo extends JpaRepository<DsepScheme, UUID> {
 	
 	DsepScheme findByDsSchemeId(String schemeID);
 	
+	DsepScheme findByDsSchemeIdAndDsSchemeProviderId(String schemeID, String providerID);
+	
 	List<DsepScheme> findAllByOrderByUpdatedAtDesc();
 	
 	@Query(

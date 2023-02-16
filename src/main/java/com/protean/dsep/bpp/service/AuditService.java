@@ -48,7 +48,7 @@ public class AuditService {
 		entity.setAction(ctx.getAction());
 		entity.setBuyerId(ctx.getBapId());
 		entity.setSellerId(ctx.getBppId());
-		entity.setCoreVersion(ctx.getCoreVersion());
+		entity.setCoreVersion(ctx.getVersion());
 		entity.setCreatedOn(new Timestamp(System.currentTimeMillis()));
 		entity.setDomain(ctx.getDomain());
 		entity.setMessageId(ctx.getMessageId());

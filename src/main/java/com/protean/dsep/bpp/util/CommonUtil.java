@@ -1,9 +1,16 @@
 package com.protean.dsep.bpp.util;
 
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
+import java.util.TimeZone;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Component;
+
+import com.protean.dsep.bpp.constant.InternalConstant;
 
 @Component
 public class CommonUtil {
@@ -23,5 +30,16 @@ public class CommonUtil {
 		secureRandom.nextBytes(nonceArr);
 		nonceVal = Base64.getEncoder().encodeToString(nonceArr);
 		return nonceVal;
+	}
+
+	public String getDateTimeString(Date date) {	
+		TimeZone tz = TimeZone.getTimeZone("UTC");
+		DateFormat df = new SimpleDateFormat(InternalConstant.DSEP_TIMESTAMP_FORMAT);
+		df.setTimeZone(tz);
+		return df.format(date);
+	}
+	
+	public String getSchemeAmountString(long amount) {	
+		return "Upto Rs."+amount+" per year";
 	}
 }

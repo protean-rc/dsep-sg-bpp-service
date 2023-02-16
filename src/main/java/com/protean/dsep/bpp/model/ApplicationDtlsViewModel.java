@@ -5,6 +5,7 @@ import lombok.Data;
 import java.util.UUID;
 
 import com.protean.beckn.api.model.common.Customer;
+import com.protean.beckn.api.model.common.Order;
 
 
 @Data
