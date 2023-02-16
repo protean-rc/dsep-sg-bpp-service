@@ -140,6 +140,24 @@ public class SchemeService {
 		return schemeDtls;
 	}
 
+	public SchemeModel getDetailsBySchemeIDAndProviderID(String schemeID, String providerID) {
+		SchemeModel schemeDtls = null;
+		
+		try {
+			DsepScheme scheme = this.dao.findByDsSchemeIdAndDsSchemeProviderId(schemeID, providerID);
+			if(scheme != null) {
+				schemeDtls = this.builder.buildSchemeModel(scheme);
+			}else {
+				throw new EntityNotFoundException("Scheme ID-"+schemeID+" with ProviderID-"+providerID+" not found");
+			}
+			
+		} catch (Exception e) {
+			throw e;
+		}
+		
+		return schemeDtls;
+	}
+	
 	public boolean updateScheme(String schemeID, SchemeModel model) throws Exception {
 		boolean result = false;
 		model.setUpdatedBy(securityUtil.getCurrentUserName());

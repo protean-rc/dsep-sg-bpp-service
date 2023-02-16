@@ -47,7 +47,6 @@ public class SecurityController {
 						model.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		final String token = this.tokenProvider.generateToken(authentication);
-		log.info("the token is {}", token);
 		return ResponseEntity.ok(new AuthTokenModel(token));
 	}
 

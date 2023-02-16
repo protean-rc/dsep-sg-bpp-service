@@ -10,6 +10,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.UUIDGenerator;
 import com.protean.beckn.api.model.common.Customer;
 import com.protean.dsep.bpp.builder.CommonBuilder;
 import com.protean.dsep.bpp.constant.ApplicationStatus;
@@ -51,8 +52,6 @@ public class ApplicationService {
 		ApplicationDtlModel appModel = null;
 		model.setUpdatedBy(model.getApplcntId());
 		model.setDeleted(false);
-		model.setAppStatus(ApplicationStatus.INIT.value());
-		model.setRemarks("Application initiated.");
 		DsepApplicationDtl appEntity = null;
 
 		try {
@@ -62,7 +61,7 @@ public class ApplicationService {
 			appModel = commonBuilder.buildApplicationDtlModel(appEntityNew);
 			log.info("INIT application created successfully - ", appModel);
 		} catch (Exception e) {
-			log.error("Exception occurred while saving INIT application details-", e);
+			log.error("Exception occurred while saving application details-", e);
 			appModel = null;
 			throw e;
 		}
@@ -79,6 +78,18 @@ public class ApplicationService {
 				entity.setDadSchemeId(model.getSchemeId());
 				entity.setDadSchemeProviderId(model.getSchemeProviderId());
 				entity.setDadApplcntDtls(jsonUtil.toJson(model.getApplcntDtls()));
+				if(model.getAddtnlDtls() != null) {
+					if(entity.getDadAddtnlDtls() == null || entity.getDadAddtnlDtls().isEmpty()) {
+						entity.setDadAddtnlDtls(model.getAddtnlDtls());
+					}
+				}
+				
+				if(model.getAddtnlInfoSubmsnId() != null) {
+					if(entity.getDadAddtnlInfoSubmsnId() == null || entity.getDadAddtnlInfoSubmsnId().isEmpty()) {
+						entity.setDadAddtnlInfoSubmsnId(model.getAddtnlInfoSubmsnId());
+					}
+				}
+				
 				entity.setDadAppStatus(model.getAppStatus());
 				entity.setDadRemarks(model.getRemarks());
 				entity.setUpdatedBy(model.getApplcntId());
@@ -94,15 +105,15 @@ public class ApplicationService {
 		return appModel;
 	}
 	
-	public String getAppAddtnlInfoNonceValue(String appID, String addInfoID) {
+	public String getAppAddtnlInfoNonceValue(String txnID, String addInfoID) {
 		String nonceVal = null;
 		try {
-			DsepApplicationDtl entity = appDtlRepo.findByDadAppIdAndDadAddtnlInfoId(appID, addInfoID);
+			DsepApplicationDtl entity = appDtlRepo.findByDadDsepTxnIdAndDadAddtnlInfoId(txnID, addInfoID);
 			if (entity != null) {
 				nonceVal = entity.getDadXinputNonceVal();
 			} else {
 				throw new EntityNotFoundException(
-						"Application not found for AppID-" + appID + ", ddInfoID-" + addInfoID);
+						"Application not found for txID-" + txnID + ", ddInfoID-" + addInfoID);
 			}
 		} catch (Exception e) {
 			throw e;
@@ -132,17 +143,17 @@ public class ApplicationService {
 		String submsnID = null;
 
 		try {
-			DsepApplicationDtl entity = appDtlRepo.findByDadAppIdAndDadAddtnlInfoId(model.getAppId(),
+			DsepApplicationDtl entity = appDtlRepo.findByDadDsepTxnIdAndDadAddtnlInfoId(model.getDsepTxnId(),
 					model.getAddtnlInfoId());
 			if (entity != null) {
-				submsnID = RandomStringUtils.randomAlphanumeric(15);
+				submsnID = UUID.randomUUID().toString();
 				entity.setDadAddtnlInfoSubmsnId(submsnID);
 				entity.setDadAddtnlDtls(model.getAddtnlDtls());
-				Customer applicant = jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class);
-				entity.setUpdatedBy(applicant.getPerson().getId());
+				//Customer applicant = jsonUtil.toModel(entity.getDadApplcntDtls(), Customer.class);
+				//entity.setUpdatedBy(applicant.getPerson().getId());
 				appDtlRepo.save(entity);
 			} else {
-				throw new EntityNotFoundException("Application not found for AppID-" + model.getAppId() + ", ddInfoID-"
+				throw new EntityNotFoundException("Application not found for txnID-" + model.getDsepTxnId() + ", ddInfoID-"
 						+ model.getAddtnlInfoId());
 			}
 		} catch (Exception e) {

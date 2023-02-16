@@ -1,6 +1,7 @@
 package com.protean.dsep.bpp.builder;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,9 +17,9 @@ import com.protean.beckn.api.enums.AckStatus;
 import com.protean.beckn.api.model.common.Ack;
 import com.protean.beckn.api.model.common.City;
 import com.protean.beckn.api.model.common.Context;
-import com.protean.beckn.api.model.common.ContextLocation;
 import com.protean.beckn.api.model.common.Country;
 import com.protean.beckn.api.model.common.Error;
+import com.protean.beckn.api.model.common.Location;
 import com.protean.beckn.api.model.response.Response;
 import com.protean.beckn.api.model.response.ResponseMessage;
 import com.protean.dsep.bpp.exception.ErrorCode;
@@ -44,7 +45,7 @@ public class ResponseBuilder {
 	}
 
 	public ResponseEntity<String> buildResponseEntity(Context ctx) throws JsonProcessingException {
-		ContextLocation location = new ContextLocation();
+		Location location = new Location();
 		City city = new City();
 		city.setName("Bangalore");
 		city.setCode("std:080");
@@ -74,14 +75,14 @@ public class ResponseBuilder {
 		resMsg.setAck(new Ack(AckStatus.ACK));
 		response.setMessage(resMsg);
 
-		context.setTimestamp(commonUtil.getDateTimeString());
+		context.setTimestamp(commonUtil.getDateTimeString(new Date()));
 		
 		response.setContext(context);
 		return this.snakeCaseMapper.writeValueAsString(response);
 	}
 
 	public ResponseEntity<String> buildNACKResponseEntity(Context ctx, String error) throws JsonProcessingException {
-		ContextLocation location = new ContextLocation();
+		Location location = new Location();
 		City city = new City();
 		city.setName("Bangalore");
 		city.setCode("std:080");
@@ -116,7 +117,7 @@ public class ResponseBuilder {
 		err.setMessage(ErrorCode.CODE_MSG.get(error));
 		response.setError(err);
 		
-		context.setTimestamp(commonUtil.getDateTimeString());
+		context.setTimestamp(commonUtil.getDateTimeString(new Date()));
 		
 		response.setContext(context);
 		return this.snakeCaseMapper.writeValueAsString(response);

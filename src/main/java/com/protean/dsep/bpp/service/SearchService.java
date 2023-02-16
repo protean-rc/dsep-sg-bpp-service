@@ -10,12 +10,15 @@ import com.protean.beckn.api.model.init.InitRequest;
 import com.protean.beckn.api.model.onconfirm.OnConfirmRequest;
 import com.protean.beckn.api.model.oninit.OnInitRequest;
 import com.protean.beckn.api.model.onsearch.OnSearchRequest;
+import com.protean.beckn.api.model.onselect.OnSelectRequest;
 import com.protean.beckn.api.model.onstatus.OnStatusRequest;
 import com.protean.beckn.api.model.search.SearchRequest;
+import com.protean.beckn.api.model.select.SelectRequest;
 import com.protean.beckn.api.model.status.StatusRequest;
 import com.protean.dsep.bpp.builder.OnConfirmBuilder;
 import com.protean.dsep.bpp.builder.OnInitBuilder;
 import com.protean.dsep.bpp.builder.OnSearchBuilder;
+import com.protean.dsep.bpp.builder.OnSelectBuilder;
 import com.protean.dsep.bpp.builder.OnStatusBuilder;
 import com.protean.dsep.bpp.sender.Sender;
 import com.protean.dsep.bpp.util.JsonUtil;
@@ -46,6 +49,9 @@ public class SearchService {
 	private OnStatusBuilder onStatusBuilder;
 	
 	@Autowired
+	private OnSelectBuilder onSelectBuilder;
+	
+	@Autowired
 	AuditService auditService;
 	
 	@Autowired
@@ -70,6 +76,25 @@ public class SearchService {
 		this.sender.send(url, headers, json);
 	}
 
+	public void send(SelectRequest model) {
+
+		OnSelectRequest onSelectRequest = this.onSelectBuilder.buildOnSelect(model);
+
+		String json = this.jsonUtil.toJsonSnakeCase(onSelectRequest);
+
+		HttpHeaders headers = securityUtil.generateAuthHeader(json);
+				
+		this.auditService.updateTxnAudit(onSelectRequest.getContext().getMessageId(), onSelectRequest.getContext().getTransactionId(), ContextAction.SELECT.value());
+		
+		this.auditService.saveAudit(onSelectRequest.getContext(), json);
+		
+		String url = onSelectRequest.getContext().getBapUri().concat(ContextAction.ON_SELECT.value());
+
+		log.info("reply with on_select json {}", json);
+
+		this.sender.send(url, headers, json);
+	}
+	
 	public void send(InitRequest model) {
 
 		OnInitRequest onInitRequest = this.onInitBuilder.buildOnInit(model);

@@ -1,7 +1,7 @@
 package com.protean.dsep.bpp.builder;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +17,14 @@ import com.protean.beckn.api.model.common.Catalog;
 import com.protean.beckn.api.model.common.Category;
 import com.protean.beckn.api.model.common.Contact;
 import com.protean.beckn.api.model.common.Context;
-import com.protean.beckn.api.model.common.Customer;
 import com.protean.beckn.api.model.common.Descriptor;
-import com.protean.beckn.api.model.common.End;
 import com.protean.beckn.api.model.common.Fulfillment;
 import com.protean.beckn.api.model.common.Item;
-import com.protean.beckn.api.model.common.Person;
 import com.protean.beckn.api.model.common.Price;
 import com.protean.beckn.api.model.common.Provider;
-import com.protean.beckn.api.model.common.Start;
-import com.protean.beckn.api.model.common.TagData;
-import com.protean.beckn.api.model.common.TagDataList;
+import com.protean.beckn.api.model.common.Stop;
+import com.protean.beckn.api.model.common.Tag;
+import com.protean.beckn.api.model.common.TagGroup;
 import com.protean.beckn.api.model.common.Time;
 import com.protean.beckn.api.model.onsearch.OnSearchMessage;
 import com.protean.beckn.api.model.onsearch.OnSearchRequest;
@@ -41,8 +38,6 @@ import com.protean.dsep.bpp.util.JsonUtil;
 import com.protean.dsep.bpp.entity.DsepScheme;
 import com.protean.dsep.bpp.entity.DsepSchemeCategory;
 import com.protean.dsep.bpp.entity.DsepSchemeProvider;
-import com.protean.dsep.bpp.model.AcademicDtlsModel;
-import com.protean.dsep.bpp.model.SchemeEligibilityModel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,7 +79,7 @@ public class OnSearchBuilder {
 
 		message.setCatalog(buildSchemeCatalog(request.getMessage()));
 
-		context.setTimestamp(commonUtil.getDateTimeString());
+		context.setTimestamp(commonUtil.getDateTimeString(new Date()));
 		replyModel.setContext(context);
 		replyModel.setMessage(message);
 		return replyModel;
@@ -92,13 +87,15 @@ public class OnSearchBuilder {
 
 	private Catalog buildSchemeCatalog(SearchMessage searchMessage) {
 
-		// starting
 		Catalog catalog = new Catalog();
+		
+		// setting BPP descriptor to catalog
+		catalog.setBppDescriptor(new Descriptor());
+		catalog.getBppDescriptor().setName("Protean DSEP Scholarships and Grants BPP Platform");
+		
 		List<Provider> bppProviders = new ArrayList<>();
 		List<Fulfillment> bppFulfillments = new ArrayList<>();
 		
-		String bppDescriptorVal=null;
-
 		Map<String, DsepSchemeProvider> sellersMap = this.dao.getSchemeProviders();
 		
 		List<String> intentDtls = getIntentAndType(searchMessage);
@@ -115,7 +112,6 @@ public class OnSearchBuilder {
 			DsepSchemeProvider schemeProvider = sellersMap.get(sellerId);
 			if (schemeProvider != null) {
 				sellerName = schemeProvider.getDspSchemeProviderName();
-				bppDescriptorVal = sellerName;
 			}
 
 			if (schemeList.size() == 0) {
@@ -141,17 +137,14 @@ public class OnSearchBuilder {
 
 			// setting seller id and name
 			provider.setId(sellerId);
-			Descriptor providerDescriptor = new Descriptor();
-			providerDescriptor.setName(sellerName);
-			provider.setDescriptor(providerDescriptor);
+			provider.setDescriptor(new Descriptor());
+			provider.getDescriptor().setName(sellerName);
 			
 			provider.setCategories(categoryList);
 
 			// building item list
 			List<Item> replyItemList = new ArrayList<>();
-			int itemIndex = 0 ;
 			for (DsepScheme entity : schemeList) {
-				itemIndex++;
 				
 				Item item = new Item();
 
@@ -163,129 +156,70 @@ public class OnSearchBuilder {
 				item.setDescriptor(itemDescriptor);
 
 				DsepSchemeCategory schemeCat = schemeCatRepo.findByDscCatCode(entity.getDsSchemeFor());
-				item.setCategoryId(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
+				List<String> catIds = new ArrayList<String>();
+				catIds.add(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
+				item.setCategoryIds(catIds);
+				
 				Price price = new Price();
 				price.setCurrency("INR");
 				price.setValue(String.valueOf(entity.getDsSchemeAmount()));
 				item.setPrice(price);
 
-				SchemeEligibilityModel eligibilityData = jsonUtil.toModel(entity.getDsEligibility(), SchemeEligibilityModel.class)  ;
+				List<TagGroup> tagData = new ArrayList<>();
 				
-				Customer customer = null;
+				TagGroup tdataBenefit = new TagGroup();
+				tdataBenefit.setDescriptor(new Descriptor());
+				tdataBenefit.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_CODE);
+				tdataBenefit.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_NAME);
+				tdataBenefit.setDisplay(true);
 				
-				if(eligibilityData != null) {
-					customer = new Customer();
-					
-					Person person = new Person();
-					
-					List<TagData> tagData = new ArrayList<TagData>();
-					
-					if(eligibilityData.getGender() != null && !eligibilityData.getGender().isBlank()) {
-						person.setGender(eligibilityData.getGender().trim());
-					}
-					
-					List<AcademicDtlsModel> acadDtls =  eligibilityData.getAcadDtls();
-					if(acadDtls != null && acadDtls.size()>0) {
-						for (AcademicDtlsModel acad : acadDtls) {
-							TagData tdata = new TagData();
-							tdata.setCode(InternalConstant.CATALOG_SCHEME_ELG_ACAD_QUAL_CODE);
-							tdata.setName(InternalConstant.CATALOG_SCHEME_ELG_ACAD_QUAL_NAME);
-							
-							List<TagDataList> tagDataList = new ArrayList<TagDataList>();
-							
-							TagDataList tdataList1 = new TagDataList();
-							tdataList1.setCode(acad.getCourseLevelID());
-							tdataList1.setName(acad.getCourseLevelName());
-							tdataList1.setValue(acad.getCourseName());
-							tagDataList.add(tdataList1);
-							
-							TagDataList tdataList2 = new TagDataList();
-							tdataList2.setCode(InternalConstant.CATALOG_SCHEME_ELG_PERCTG_GRAD_CODE);
-							tdataList2.setName(InternalConstant.CATALOG_SCHEME_ELG_PERCTG_GRAD_NAME);
-							tdataList2.setValue(acad.getScoreValue());
-							tagDataList.add(tdataList2);
-							
-							TagDataList tdataList3 = new TagDataList();
-							tdataList3.setCode(InternalConstant.CATALOG_SCHEME_ELG_PASS_YR_CODE);
-							tdataList3.setName(InternalConstant.CATALOG_SCHEME_ELG_PASS_YR_NAME);
-							tdataList3.setValue(acad.getPassingYear());
-							tagDataList.add(tdataList3);
-							
-							tdata.setList(tagDataList);
-							
-							tagData.add(tdata);
-						}
-					}
-					
-					
-					if(eligibilityData.getCaste() != null && eligibilityData.getCaste().size() > 0) {
-						TagData tdataCast = new TagData();
-						tdataCast.setCode(InternalConstant.CATALOG_SCHEME_ELG_CASTE_CAT_CODE);
-						tdataCast.setName(InternalConstant.CATALOG_SCHEME_ELG_CASTE_CAT_NAME);
-						
-						List<TagDataList> tagDataCastList = new ArrayList<TagDataList>();
-												
-						for (String castData : eligibilityData.getCaste()) {
-							TagDataList tdataCastList = new TagDataList();
-							tdataCastList.setCode(castData.trim());
-							tdataCastList.setValue(castData.trim());
-							tagDataCastList.add(tdataCastList);
-						}
-						tdataCast.setList(tagDataCastList);
-						tagData.add(tdataCast);
-					}
-					
-					if(eligibilityData.getFamilyIncome() != null && !eligibilityData.getFamilyIncome().isBlank()) {
-						TagData tdataFin = new TagData();
-						tdataFin.setCode(InternalConstant.CATALOG_SCHEME_ELG_FIN_CAT_CODE);
-						tdataFin.setName(InternalConstant.CATALOG_SCHEME_ELG_FIN_CAT_NAME);
-						
-						List<TagDataList> tagDataFinList = new ArrayList<TagDataList>();
-						
-						TagDataList tdataFinList = new TagDataList();
-						tdataFinList.setCode(InternalConstant.CATALOG_SCHEME_ELG_FMLY_INCOM_CODE);
-						tdataFinList.setName(InternalConstant.CATALOG_SCHEME_ELG_FMLY_INCOM_NAME);
-						tdataFinList.setValue(eligibilityData.getFamilyIncome().trim());
-						tagDataFinList.add(tdataFinList);
-						tdataFin.setList(tagDataFinList);
-						tagData.add(tdataFin);
-					}
-
-					person.setTags(tagData);
-					customer.setPerson(person);
-				}	
+				List<Tag> tagDataBenefitList = new ArrayList<Tag>();
+										
+				Tag tagSchemeAmt = new Tag();
+				tagSchemeAmt.setDescriptor(new Descriptor());
+				tagSchemeAmt.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_CODE);
+				tagSchemeAmt.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_NAME);
+				tagSchemeAmt.setValue(entity.getDsSchemeAmount() > 0 ? commonUtil.getSchemeAmountString(entity.getDsSchemeAmount()):"0");
+				tagSchemeAmt.setDisplay(true);
+				tagDataBenefitList.add(tagSchemeAmt);
+				
+				tdataBenefit.setList(tagDataBenefitList);
+				tagData.add(tdataBenefit);
+				
+				item.setTags(tagData);
 				
 				Fulfillment fulfillment = new Fulfillment();
-				fulfillment.setId(InternalConstant.FULFILLMENT_ID_PREFIX.concat(String.format("%02d", itemIndex)));
+				fulfillment.setId(InternalConstant.FULFILLMENT_ID_PREFIX.concat(entity.getDsSchemeId().split("_")[1]));
 				fulfillment.setType(entity.getDsSchemeType());
 				
-				if(customer != null) {
-					fulfillment.setCustomer(customer);
-				}
+				List<Stop> stops = new ArrayList<Stop>();
 				
-				Start start = new Start();
+				Stop start = new Stop();
+				start.setType(InternalConstant.APPLICATION_START);
 				Time startTime = new Time();
-				startTime.setTimestamp(entity.getDsStartDate().toString());
+				startTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsStartDate()));
 				start.setTime(startTime);
 				
-				End end = new End();
+				Stop end = new Stop();
+				end.setType(InternalConstant.APPLICATION_END);
 				Time endTime = new Time();
-				endTime.setTimestamp(entity.getDsEndDate().toString());
+				endTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsEndDate()));
 				end.setTime(endTime);
 				
-				fulfillment.setStart(start);
-				fulfillment.setEnd(end);
+				stops.add(start);
+				stops.add(end);
+				fulfillment.setStops(stops);
 				
 				Contact contact = new Contact();
-				contact.setName(entity.getDsSpocName());
 				contact.setEmail(entity.getDsSpocEmail());
 				contact.setPhone(entity.getDsHelpdeskNo());
 				
 				fulfillment.setContact(contact);
 				
 				bppFulfillments.add(fulfillment);
-				item.setFulfillmentId(fulfillment.getId());
-				//item.setMatched(Boolean.TRUE);				
+				List<String> fulfillmentIds = new ArrayList<String>();
+				fulfillmentIds.add(fulfillment.getId());
+				item.setFulfillmentIds(fulfillmentIds);
 				replyItemList.add(item);
 			}
 			
@@ -296,23 +230,14 @@ public class OnSearchBuilder {
 		}
 
 		// setting the providers to catalog
-		catalog.setBppProviders(bppProviders);
-
-		// setting BPP descriptor to catalog
-		Descriptor bppDescriptor = new Descriptor();
-		bppDescriptor.setName(bppDescriptorVal);
-		catalog.setBppDescriptor(bppDescriptor);
-
-		// setting BPP fulfillment to catalog
+		catalog.setBppProviders(bppProviders);		
 		
-		
-		//catalog.setBppFulfillments(bppFulfillments);
 		log.info("### FINAL CATALOG ####");
 		log.info(jsonUtil.toJson(catalog));
 		log.info("######################");
 		return catalog;
 	}
-
+	
 	private List<String> getIntentAndType(SearchMessage message) {
 		List<String> intentDtls = new ArrayList<String>();
 		String intent = null;
@@ -341,18 +266,18 @@ public class OnSearchBuilder {
 					&& message.getIntent().getFulfillment().getCustomer().getPerson().getTags() != null
 					&& message.getIntent().getFulfillment().getCustomer().getPerson().getTags().size() > 0) {
 				
-				List<TagData> tagData = message.getIntent().getFulfillment().getCustomer().getPerson().getTags();
+				List<TagGroup> tagData = message.getIntent().getFulfillment().getCustomer().getPerson().getTags();
 				
-				for (TagData tag : tagData) {
-					if(tag.getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_FIN_CAT_CODE)) {
-						List<TagDataList> tagDataList = tag.getList();
-						if(tagDataList.get(0).getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_FMLY_INCOM_CODE)) {
+				for (TagGroup tagGrop : tagData) {
+					if(tagGrop.getDescriptor().getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_FIN_CAT_CODE)) {
+						List<Tag> tagDataList = tagGrop.getList();
+						if(tagDataList.get(0).getDescriptor().getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_FMLY_INCOM_CODE)) {
 							intent =  tagDataList.get(0).getValue();
 							intentType = InternalConstant.INTENT_TYPE_MAX_FAMILIY_INCOME;
 							break;
 						}
-					}else if(tag.getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_CASTE_CAT_CODE)) {
-						List<TagDataList> tagDataList = tag.getList();
+					}else if(tagGrop.getDescriptor().getCode().equalsIgnoreCase(InternalConstant.CATALOG_SCHEME_ELG_CASTE_CAT_CODE)) {
+						List<Tag> tagDataList = tagGrop.getList();
 						intent =  tagDataList.get(0).getValue();
 						intentType = InternalConstant.INTENT_TYPE_CASTE;
 						break;

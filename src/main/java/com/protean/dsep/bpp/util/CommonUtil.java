@@ -32,10 +32,14 @@ public class CommonUtil {
 		return nonceVal;
 	}
 
-	public String getDateTimeString() {	
+	public String getDateTimeString(Date date) {	
 		TimeZone tz = TimeZone.getTimeZone("UTC");
 		DateFormat df = new SimpleDateFormat(InternalConstant.DSEP_TIMESTAMP_FORMAT);
 		df.setTimeZone(tz);
-		return df.format(new Date());
+		return df.format(date);
+	}
+	
+	public String getSchemeAmountString(long amount) {	
+		return "Upto Rs."+amount+" per year";
 	}
 }
