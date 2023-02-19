@@ -77,7 +77,7 @@ public class ApplicationService {
 			if (entity != null) {
 				entity.setDadSchemeId(model.getSchemeId());
 				entity.setDadSchemeProviderId(model.getSchemeProviderId());
-				entity.setDadApplcntDtls(jsonUtil.toJson(model.getApplcntDtls()));
+				entity.setDadApplcntDtls(model.getApplcntDtls() != null ? jsonUtil.toJson(model.getApplcntDtls()) : null);
 				if(model.getAddtnlDtls() != null) {
 					if(entity.getDadAddtnlDtls() == null || entity.getDadAddtnlDtls().isEmpty()) {
 						entity.setDadAddtnlDtls(model.getAddtnlDtls());

@@ -83,6 +83,7 @@ public class OnConfirmBuilder {
 			Error error = new Error();
 			error.setCode(ErrorCode.BUSINESS_ERROR.value());
 			error.setMessage("Unable to confirm application request.");
+			e.printStackTrace();
 			replyModel.setError(error);
 		}
 
@@ -112,10 +113,17 @@ public class OnConfirmBuilder {
 				throw new EntityNotFoundException(txnID);
 			}
 			
-			model.setApplcntId(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
-			model.setApplcntDtls(confirmMsg.getOrder().getFulfillments().get(0).getCustomer());
+
+			if(confirmMsg.getOrder().getFulfillments().get(0).getCustomer() != null) {
+				model.setApplcntDtls(confirmMsg.getOrder().getFulfillments().get(0).getCustomer());
+				
+				if(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson() != null
+						&& confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId() != null) {
+					model.setApplcntId(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
+				}
+			}
 			model.setDsepTxnId(txnID);
-			model.setCreatedBy(confirmMsg.getOrder().getFulfillments().get(0).getCustomer().getPerson().getId());
+			model.setCreatedBy(model.getApplcntId());
 			
 			SchemeModel scheme = schemeService.getDetailsBySchemeID(confirmMsg.getOrder().getItems().get(0).getId());
 			

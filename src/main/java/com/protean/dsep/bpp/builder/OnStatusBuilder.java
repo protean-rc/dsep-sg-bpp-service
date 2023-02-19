@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,10 +48,12 @@ import com.protean.dsep.bpp.model.ApplicationDtlModel;
 import com.protean.dsep.bpp.model.SchemeEligibilityModel;
 import com.protean.dsep.bpp.model.SchemeModel;
 import com.protean.dsep.bpp.model.SchemeProviderModel;
+import com.protean.dsep.bpp.model.XInputDataModel;
 import com.protean.dsep.bpp.service.ApplicationService;
 import com.protean.dsep.bpp.service.SchemeProviderService;
 import com.protean.dsep.bpp.service.SchemeService;
 import com.protean.dsep.bpp.util.CommonUtil;
+import com.protean.dsep.bpp.util.JsonUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,6 +75,9 @@ public class OnStatusBuilder {
 	
 	@Autowired
 	CommonUtil commonUtil;
+	
+	@Autowired
+	JsonUtil jsonUtil;
 	
 	@Autowired
 	SchemeCategoryRepo schemeCatRepo;
@@ -334,7 +340,7 @@ public class OnStatusBuilder {
 					xinForm.setUrl(xinUrl.concat(InternalConstant.FW_SLASH).concat(txnID)
 							.concat(InternalConstant.FW_SLASH).concat(model.getAddtnlInfoId()));
 					xinForm.setMimeType(MimeTypeUtils.TEXT_HTML_VALUE);
-					xinForm.setData(model.getAddtnlDtls());
+					xinForm.setData(model.getAddtnlDtls() != null ? jsonUtil.toModel(model.getAddtnlDtls(), XInputDataModel.class) : null);
 					xinput.setForm(xinForm);
 				}else {
 					xinput.setRequired(false);
@@ -352,7 +358,7 @@ public class OnStatusBuilder {
 			
 			
 		} catch (Exception e) {
-			log.error("Exception occurred while creating CONFIRM order - ",e);
+			log.error("Exception occurred while getting order STATUS - ",e);
 			throw e;
 		}
 		

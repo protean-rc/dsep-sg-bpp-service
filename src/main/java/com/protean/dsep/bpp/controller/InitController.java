@@ -71,7 +71,7 @@ public class InitController {
 		if(isValidHeader) {
 			log.info("Authentication Successful!");
 			
-			this.auditService.saveAudit(model.getContext(), this.jsonUtil.toJson(body));
+			this.auditService.saveAudit(model.getContext(), requestBody);
 			
 			CompletableFuture.runAsync(() -> {
 				try {

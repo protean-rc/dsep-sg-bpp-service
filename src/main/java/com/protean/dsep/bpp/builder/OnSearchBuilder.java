@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,7 @@ import com.protean.beckn.api.model.common.Category;
 import com.protean.beckn.api.model.common.Contact;
 import com.protean.beckn.api.model.common.Context;
 import com.protean.beckn.api.model.common.Descriptor;
+import com.protean.beckn.api.model.common.Error;
 import com.protean.beckn.api.model.common.Fulfillment;
 import com.protean.beckn.api.model.common.Item;
 import com.protean.beckn.api.model.common.Price;
@@ -38,6 +41,7 @@ import com.protean.dsep.bpp.util.JsonUtil;
 import com.protean.dsep.bpp.entity.DsepScheme;
 import com.protean.dsep.bpp.entity.DsepSchemeCategory;
 import com.protean.dsep.bpp.entity.DsepSchemeProvider;
+import com.protean.dsep.bpp.exception.SearchTypeNotSupportedException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,168 +81,191 @@ public class OnSearchBuilder {
 
 		OnSearchMessage message = new OnSearchMessage();
 
-		message.setCatalog(buildSchemeCatalog(request.getMessage()));
-
+		try {
+			message.setCatalog(buildSchemeCatalog(request.getMessage()));
+			replyModel.setMessage(message);
+		} catch (Exception e) {
+			Error error = new Error();
+			error.setCode("40000");
+			error.setMessage("Unable to search application request - "+e.getMessage());
+			replyModel.setError(error);
+		}
+		
 		context.setTimestamp(commonUtil.getDateTimeString(new Date()));
 		replyModel.setContext(context);
-		replyModel.setMessage(message);
+
 		return replyModel;
 	}
 
-	private Catalog buildSchemeCatalog(SearchMessage searchMessage) {
+	private Catalog buildSchemeCatalog(SearchMessage searchMessage) throws Exception {
 
 		Catalog catalog = new Catalog();
 		
-		// setting BPP descriptor to catalog
-		catalog.setBppDescriptor(new Descriptor());
-		catalog.getBppDescriptor().setName("Protean DSEP Scholarships and Grants BPP Platform");
 		
-		List<Provider> bppProviders = new ArrayList<>();
-		List<Fulfillment> bppFulfillments = new ArrayList<>();
-		
-		Map<String, DsepSchemeProvider> sellersMap = this.dao.getSchemeProviders();
-		
-		List<String> intentDtls = getIntentAndType(searchMessage);
-		
-		log.info("Intent details=>{}", intentDtls);
-		Map<String, List<DsepScheme>> groupBySellers = this.dao.getSchemesGroupBySchemeProviders(intentDtls.get(0), intentDtls.get(1));
-
-		for (Entry<String, List<DsepScheme>> entry : groupBySellers.entrySet()) {
-			List<DsepScheme> schemeList = entry.getValue();
-
-			String sellerId = entry.getKey();
-			String sellerName = null;
+		try {
+			// setting BPP descriptor to catalog
+			catalog.setBppDescriptor(new Descriptor());
+			catalog.getBppDescriptor().setName("Protean DSEP Scholarships and Grants BPP Platform");
 			
-			DsepSchemeProvider schemeProvider = sellersMap.get(sellerId);
-			if (schemeProvider != null) {
-				sellerName = schemeProvider.getDspSchemeProviderName();
+			List<Provider> bppProviders = new ArrayList<>();
+			List<Fulfillment> bppFulfillments = new ArrayList<>();
+			
+			Map<String, DsepSchemeProvider> sellersMap = this.dao.getSchemeProviders();
+			
+			List<String> intentDtls = getIntentAndType(searchMessage);
+			
+			log.info("Intent details=>{}", intentDtls);
+			Map<String, List<DsepScheme>> groupBySellers = this.dao.getSchemesGroupBySchemeProviders(intentDtls.get(0), intentDtls.get(1));
+
+			for (Entry<String, List<DsepScheme>> entry : groupBySellers.entrySet()) {
+				List<DsepScheme> schemeList = entry.getValue();
+
+				String sellerId = entry.getKey();
+				String sellerName = null;
+				
+				DsepSchemeProvider schemeProvider = sellersMap.get(sellerId);
+				if (schemeProvider != null) {
+					sellerName = schemeProvider.getDspSchemeProviderName();
+				}
+
+				if (schemeList.size() == 0) {
+					return catalog;
+				}
+
+				Set<Category> categoryList = new HashSet<Category>();
+				/*for (DsepScheme scheme : schemeList) {
+
+					// building categories
+					DsepSchemeCategory schemeCat = schemeCatRepo.findByDscCatCode(scheme.getDsSchemeFor());
+					Category category = new Category();
+					category.setId(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
+					Descriptor categoryDescriptor = new Descriptor();
+					categoryDescriptor.setCode(schemeCat.getDscCatCode());
+					categoryDescriptor.setName(schemeCat.getDscCatName());
+					category.setDescriptor(categoryDescriptor);
+					categoryList.add(category);
+				}*/
+
+				Provider provider = new Provider();
+				
+
+				// setting seller id and name
+				provider.setId(sellerId);
+				provider.setDescriptor(new Descriptor());
+				provider.getDescriptor().setName(sellerName);
+
+				// building item list
+				List<Item> replyItemList = new ArrayList<>();
+				for (DsepScheme entity : schemeList) {
+					
+					Item item = new Item();
+
+					item.setId(entity.getDsSchemeId());
+
+					Descriptor itemDescriptor = new Descriptor();
+					itemDescriptor.setName(entity.getDsSchemeName());
+					itemDescriptor.setLongDesc(entity.getDsSchemeDescription());
+					item.setDescriptor(itemDescriptor);
+
+					DsepSchemeCategory schemeCat = schemeCatRepo.findByDscCatCode(entity.getDsSchemeFor());
+					
+					List<String> catIds = new ArrayList<String>();
+					catIds.add(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
+					item.setCategoryIds(catIds);
+					
+					Category category = new Category();
+					category.setId(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
+					category.setDescriptor(new Descriptor());
+					category.getDescriptor().setCode(schemeCat.getDscCatCode());
+					category.getDescriptor().setName(schemeCat.getDscCatName());
+					categoryList.add(category);
+					
+					
+					Price price = new Price();
+					price.setCurrency("INR");
+					price.setValue(String.valueOf(entity.getDsSchemeAmount()));
+					item.setPrice(price);
+
+					List<TagGroup> tagData = new ArrayList<>();
+					
+					TagGroup tdataBenefit = new TagGroup();
+					tdataBenefit.setDescriptor(new Descriptor());
+					tdataBenefit.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_CODE);
+					tdataBenefit.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_NAME);
+					tdataBenefit.setDisplay(true);
+					
+					List<Tag> tagDataBenefitList = new ArrayList<Tag>();
+											
+					Tag tagSchemeAmt = new Tag();
+					tagSchemeAmt.setDescriptor(new Descriptor());
+					tagSchemeAmt.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_CODE);
+					tagSchemeAmt.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_NAME);
+					tagSchemeAmt.setValue(entity.getDsSchemeAmount() > 0 ? commonUtil.getSchemeAmountString(entity.getDsSchemeAmount()):"0");
+					tagSchemeAmt.setDisplay(true);
+					tagDataBenefitList.add(tagSchemeAmt);
+					
+					tdataBenefit.setList(tagDataBenefitList);
+					tagData.add(tdataBenefit);
+					
+					item.setTags(tagData);
+					
+					Fulfillment fulfillment = new Fulfillment();
+					fulfillment.setId(InternalConstant.FULFILLMENT_ID_PREFIX.concat(entity.getDsSchemeId().split("_")[1]));
+					fulfillment.setType(entity.getDsSchemeType());
+					
+					List<Stop> stops = new ArrayList<Stop>();
+					
+					Stop start = new Stop();
+					start.setType(InternalConstant.APPLICATION_START);
+					Time startTime = new Time();
+					startTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsStartDate()));
+					start.setTime(startTime);
+					
+					Stop end = new Stop();
+					end.setType(InternalConstant.APPLICATION_END);
+					Time endTime = new Time();
+					endTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsEndDate()));
+					end.setTime(endTime);
+					
+					stops.add(start);
+					stops.add(end);
+					fulfillment.setStops(stops);
+					
+					Contact contact = new Contact();
+					contact.setEmail(entity.getDsSpocEmail());
+					contact.setPhone(entity.getDsHelpdeskNo());
+					
+					fulfillment.setContact(contact);
+					
+					bppFulfillments.add(fulfillment);
+					List<String> fulfillmentIds = new ArrayList<String>();
+					fulfillmentIds.add(fulfillment.getId());
+					item.setFulfillmentIds(fulfillmentIds);
+					replyItemList.add(item);
+				}
+				
+				provider.setCategories(categoryList);
+				provider.setItems(replyItemList);
+				provider.setFulfillments(bppFulfillments);
+				// adding the single provider
+				bppProviders.add(provider);
 			}
 
-			if (schemeList.size() == 0) {
-				return catalog;
-			}
-
-			Set<Category> categoryList = new HashSet<Category>();
-			for (DsepScheme scheme : schemeList) {
-
-				// building categories
-				DsepSchemeCategory schemeCat = schemeCatRepo.findByDscCatCode(scheme.getDsSchemeFor());
-				Category category = new Category();
-				category.setId(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
-				Descriptor categoryDescriptor = new Descriptor();
-				categoryDescriptor.setCode(schemeCat.getDscCatCode());
-				categoryDescriptor.setName(schemeCat.getDscCatName());
-				category.setDescriptor(categoryDescriptor);
-				categoryList.add(category);
-			}
-
-			Provider provider = new Provider();
-			
-
-			// setting seller id and name
-			provider.setId(sellerId);
-			provider.setDescriptor(new Descriptor());
-			provider.getDescriptor().setName(sellerName);
-			
-			provider.setCategories(categoryList);
-
-			// building item list
-			List<Item> replyItemList = new ArrayList<>();
-			for (DsepScheme entity : schemeList) {
-				
-				Item item = new Item();
-
-				item.setId(entity.getDsSchemeId());
-
-				Descriptor itemDescriptor = new Descriptor();
-				itemDescriptor.setName(entity.getDsSchemeName());
-				itemDescriptor.setLongDesc(entity.getDsSchemeDescription());
-				item.setDescriptor(itemDescriptor);
-
-				DsepSchemeCategory schemeCat = schemeCatRepo.findByDscCatCode(entity.getDsSchemeFor());
-				List<String> catIds = new ArrayList<String>();
-				catIds.add(InternalConstant.CATEGORY_ID_PREFIX.concat(String.valueOf(schemeCat.getDscCatId())));
-				item.setCategoryIds(catIds);
-				
-				Price price = new Price();
-				price.setCurrency("INR");
-				price.setValue(String.valueOf(entity.getDsSchemeAmount()));
-				item.setPrice(price);
-
-				List<TagGroup> tagData = new ArrayList<>();
-				
-				TagGroup tdataBenefit = new TagGroup();
-				tdataBenefit.setDescriptor(new Descriptor());
-				tdataBenefit.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_CODE);
-				tdataBenefit.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_NAME);
-				tdataBenefit.setDisplay(true);
-				
-				List<Tag> tagDataBenefitList = new ArrayList<Tag>();
-										
-				Tag tagSchemeAmt = new Tag();
-				tagSchemeAmt.setDescriptor(new Descriptor());
-				tagSchemeAmt.getDescriptor().setCode(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_CODE);
-				tagSchemeAmt.getDescriptor().setName(InternalConstant.CATALOG_SCHEME_BENEFITS_AMT_NAME);
-				tagSchemeAmt.setValue(entity.getDsSchemeAmount() > 0 ? commonUtil.getSchemeAmountString(entity.getDsSchemeAmount()):"0");
-				tagSchemeAmt.setDisplay(true);
-				tagDataBenefitList.add(tagSchemeAmt);
-				
-				tdataBenefit.setList(tagDataBenefitList);
-				tagData.add(tdataBenefit);
-				
-				item.setTags(tagData);
-				
-				Fulfillment fulfillment = new Fulfillment();
-				fulfillment.setId(InternalConstant.FULFILLMENT_ID_PREFIX.concat(entity.getDsSchemeId().split("_")[1]));
-				fulfillment.setType(entity.getDsSchemeType());
-				
-				List<Stop> stops = new ArrayList<Stop>();
-				
-				Stop start = new Stop();
-				start.setType(InternalConstant.APPLICATION_START);
-				Time startTime = new Time();
-				startTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsStartDate()));
-				start.setTime(startTime);
-				
-				Stop end = new Stop();
-				end.setType(InternalConstant.APPLICATION_END);
-				Time endTime = new Time();
-				endTime.setTimestamp(commonUtil.getDateTimeString(entity.getDsEndDate()));
-				end.setTime(endTime);
-				
-				stops.add(start);
-				stops.add(end);
-				fulfillment.setStops(stops);
-				
-				Contact contact = new Contact();
-				contact.setEmail(entity.getDsSpocEmail());
-				contact.setPhone(entity.getDsHelpdeskNo());
-				
-				fulfillment.setContact(contact);
-				
-				bppFulfillments.add(fulfillment);
-				List<String> fulfillmentIds = new ArrayList<String>();
-				fulfillmentIds.add(fulfillment.getId());
-				item.setFulfillmentIds(fulfillmentIds);
-				replyItemList.add(item);
-			}
-			
-			provider.setItems(replyItemList);
-			provider.setFulfillments(bppFulfillments);
-			// adding the single provider
-			bppProviders.add(provider);
-		}
-
-		// setting the providers to catalog
-		catalog.setBppProviders(bppProviders);		
+			// setting the providers to catalog
+			catalog.setBppProviders(bppProviders);
+		} catch (SearchTypeNotSupportedException e) {
+			throw e;
+		} catch (Exception e) {
+			throw e;
+		}		
 		
 		log.info("### FINAL CATALOG ####");
-		log.info(jsonUtil.toJson(catalog));
+		log.info(catalog != null ? jsonUtil.toJson(catalog) : "Catalog is empty!");
 		log.info("######################");
 		return catalog;
 	}
 	
-	private List<String> getIntentAndType(SearchMessage message) {
+	private List<String> getIntentAndType(SearchMessage message) throws SearchTypeNotSupportedException {
 		List<String> intentDtls = new ArrayList<String>();
 		String intent = null;
 		String intentType = null;
@@ -283,10 +310,16 @@ public class OnSearchBuilder {
 						break;
 					}
 				}
+			}else {
+				throw new SearchTypeNotSupportedException("Invalid search intent or search intent is not supported by this BPP. "
+						+ "Supported search types are - 1)search by scholarship name, 2)search by gender eligibility criteria, "
+						+ "3)search by scholarship category and gender eligibility criteria");
 			}
 			
 			intentDtls.add(intent);
 			intentDtls.add(intentType);
+		} else {
+			throw new SearchTypeNotSupportedException("Intent not found in search request");
 		}
 		
 		
