@@ -6,7 +6,12 @@ spring:
       url: jdbc:postgresql://localhost:5432/dsep-bpp-new
       username: postgres
       password: postgres
+      hikari:
+         minimum-idle: 5
+         maximum-pool-size: 50 
+         connection-timeout: 30000
    jpa:
+      open-in-view: false
       database-platform: org.hibernate.dialect.PostgreSQLDialect
       hibernate:
          ddl-auto: none
@@ -31,6 +36,8 @@ logging:
       org.springframework.web: ERROR
       com.protean.dsep.bpp: INFO
       org.hibernate: ERROR
+      com.zaxxer.hikari.HikariConfig: DEBUG
+      com.zaxxer.hikari: TRACE
 xinput:
    form:
       base_url: http://localhost:8001/public/getForm
