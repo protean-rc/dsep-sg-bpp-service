@@ -65,9 +65,13 @@ public class SearchService {
 
 		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 				
-		this.auditService.updateTxnAudit(onSearchRequest.getContext().getMessageId(), onSearchRequest.getContext().getTransactionId(), ContextAction.SEARCH.value());
-		
-		this.auditService.saveAudit(onSearchRequest.getContext(), json);
+		try {
+			this.auditService.updateTxnAudit(onSearchRequest.getContext().getMessageId(), onSearchRequest.getContext().getTransactionId(), ContextAction.SEARCH.value());
+			
+			this.auditService.saveAudit(onSearchRequest.getContext(), json);
+		} catch (Exception e) {
+			log.error("Error occurred while auditing ON_SEARCH request-",e);
+		}
 		
 		String url = onSearchRequest.getContext().getBapUri().concat(ContextAction.ON_SEARCH.value());	//Sending on_search response directly to BAP
 
@@ -84,9 +88,13 @@ public class SearchService {
 
 		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 				
-		this.auditService.updateTxnAudit(onSelectRequest.getContext().getMessageId(), onSelectRequest.getContext().getTransactionId(), ContextAction.SELECT.value());
-		
-		this.auditService.saveAudit(onSelectRequest.getContext(), json);
+		try {
+			this.auditService.updateTxnAudit(onSelectRequest.getContext().getMessageId(), onSelectRequest.getContext().getTransactionId(), ContextAction.SELECT.value());
+			
+			this.auditService.saveAudit(onSelectRequest.getContext(), json);
+		} catch (Exception e) {
+			log.error("Error occurred while auditing ON_SELECT request-",e);
+		}
 		
 		String url = onSelectRequest.getContext().getBapUri().concat(ContextAction.ON_SELECT.value());
 
@@ -103,9 +111,13 @@ public class SearchService {
 		
 		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 
-		this.auditService.updateTxnAudit(onInitRequest.getContext().getMessageId(), onInitRequest.getContext().getTransactionId(), ContextAction.INIT.value());
-		
-		this.auditService.saveAudit(onInitRequest.getContext(), json);
+		try {
+			this.auditService.updateTxnAudit(onInitRequest.getContext().getMessageId(), onInitRequest.getContext().getTransactionId(), ContextAction.INIT.value());
+			
+			this.auditService.saveAudit(onInitRequest.getContext(), json);
+		} catch (Exception e) {
+			log.error("Error occurred while auditing ON_INIT request-",e);
+		}
 		
 		String url = onInitRequest.getContext().getBapUri().concat(ContextAction.ON_INIT.value());
 
@@ -122,9 +134,13 @@ public class SearchService {
 		
 		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 		
-		this.auditService.updateTxnAudit(onConfirmRequest.getContext().getMessageId(), onConfirmRequest.getContext().getTransactionId(), ContextAction.CONFIRM.value());
-		
-		this.auditService.saveAudit(onConfirmRequest.getContext(), json);
+		try {
+			this.auditService.updateTxnAudit(onConfirmRequest.getContext().getMessageId(), onConfirmRequest.getContext().getTransactionId(), ContextAction.CONFIRM.value());
+			
+			this.auditService.saveAudit(onConfirmRequest.getContext(), json);
+		} catch (Exception e) {
+			log.error("Error occurred while auditing ON_CONFIRM request-",e);
+		}
 		
 		String url = onConfirmRequest.getContext().getBapUri().concat(ContextAction.ON_CONFIRM.value());
 		log.info("reply with on_confirm json {}", json);
@@ -140,9 +156,13 @@ public class SearchService {
 		
 		HttpHeaders headers = securityUtil.generateAuthHeader(json);
 		
-		this.auditService.updateTxnAudit(onStatusRequest.getContext().getMessageId(), onStatusRequest.getContext().getTransactionId(), ContextAction.STATUS.value());
-		
-		this.auditService.saveAudit(onStatusRequest.getContext(), json);
+		try {
+			this.auditService.updateTxnAudit(onStatusRequest.getContext().getMessageId(), onStatusRequest.getContext().getTransactionId(), ContextAction.STATUS.value());
+			
+			this.auditService.saveAudit(onStatusRequest.getContext(), json);
+		} catch (Exception e) {
+			log.error("Error occurred while auditing ON_STATUS request-",e);
+		}
 		
 		String url = onStatusRequest.getContext().getBapUri().concat(ContextAction.ON_STATUS.value());
 		log.info("reply with on_status json {}", json);

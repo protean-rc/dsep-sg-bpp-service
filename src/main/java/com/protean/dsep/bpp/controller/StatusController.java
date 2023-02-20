@@ -71,7 +71,11 @@ public class StatusController {
 		if(isValidHeader) {
 			log.info("Authentication Successful!");
 			
-			this.auditService.saveAudit(model.getContext(), requestBody);
+			try {
+				this.auditService.saveAudit(model.getContext(), requestBody);
+			} catch (Exception e1) {
+				log.error("Error occured while auditing STATUS request-",e1);
+			}
 			
 			CompletableFuture.runAsync(() -> {
 				try {

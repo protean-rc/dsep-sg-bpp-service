@@ -8,4 +8,6 @@ import com.protean.dsep.bpp.entity.DsepApiAuditSeller;
 @Repository
 public interface ApiAuditRepo extends JpaRepository<DsepApiAuditSeller, String> {
 	DsepApiAuditSeller findByMessageIdAndTransactionIdAndAction(String msgID, String txnID, String actn);
+	
+	DsepApiAuditSeller findFirstByMessageIdAndTransactionIdAndActionOrderByCreatedOnDesc(String msgID, String txnID, String actn);
 }

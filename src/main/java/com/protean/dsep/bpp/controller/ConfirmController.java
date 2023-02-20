@@ -70,7 +70,11 @@ public class ConfirmController {
 		if(isValidHeader) {
 			log.info("Authentication Successful!");
 			
-			this.auditService.saveAudit(model.getContext(), requestBody);
+			try {
+				this.auditService.saveAudit(model.getContext(), requestBody);
+			} catch (Exception e1) {
+				log.error("Error occured while auditing CONFIRM request-",e1);
+			}
 			
 			CompletableFuture.runAsync(() -> {
 				try {

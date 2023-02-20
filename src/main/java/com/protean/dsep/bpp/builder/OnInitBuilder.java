@@ -24,6 +24,7 @@ import com.protean.dsep.bpp.constant.ApplicationStatus;
 import com.protean.dsep.bpp.constant.InternalConstant;
 import com.protean.dsep.bpp.model.ApplicationDtlModel;
 import com.protean.dsep.bpp.model.SchemeModel;
+import com.protean.dsep.bpp.model.XInputDataModel;
 import com.protean.dsep.bpp.service.ApplicationService;
 import com.protean.dsep.bpp.service.SchemeService;
 import com.protean.dsep.bpp.util.CommonUtil;
@@ -102,7 +103,7 @@ public class OnInitBuilder {
 					if (addtnlDtls == null && (addInfoSubmsnID != null && !addInfoSubmsnID.isEmpty())) {
 						ApplicationDtlModel model = appService.getDetailsByTxnID(txnID);
 						if(model.getAddtnlInfoSubmsnId().equalsIgnoreCase(addInfoSubmsnID)) {
-							order.getItems().get(0).getXinput().getForm().setData(model.getAddtnlDtls());
+							order.getItems().get(0).getXinput().getForm().setData(model.getAddtnlDtls() != null ? jsonUtil.toModel(model.getAddtnlDtls(), XInputDataModel.class) : null);
 						}else {
 							throw new Exception("Invalid additional info submission id");
 						}
