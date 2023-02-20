@@ -55,10 +55,24 @@ public class ApplicationService {
 		DsepApplicationDtl appEntity = null;
 
 		try {
-			appEntity = commonBuilder.buildApplicationDtlEntity(model);
-			log.info("Saving init application details - {}", appEntity);
+			DsepApplicationDtl entity = appDtlRepo.findByDadDsepTxnId(model.getDsepTxnId());
+			if(entity == null) {
+				appEntity = commonBuilder.buildApplicationDtlEntity(model);
+				log.info("Saving init application details - {}", appEntity);
+				
+			} else {
+				appEntity = entity;
+				appEntity.setDadDsepTxnId(model.getDsepTxnId());
+				appEntity.setDadAppStatus(model.getAppStatus());
+				appEntity.setDadSchemeId(model.getSchemeId());
+				appEntity.setDadSchemeProviderId(model.getSchemeProviderId());
+				appEntity.setUpdatedBy(model.getUpdatedBy());
+				log.info("Updating init application details - {}", entity);
+			}
+			
 			DsepApplicationDtl appEntityNew = appDtlRepo.save(appEntity);
 			appModel = commonBuilder.buildApplicationDtlModel(appEntityNew);
+			
 			log.info("INIT application created successfully - ", appModel);
 		} catch (Exception e) {
 			log.error("Exception occurred while saving application details-", e);
@@ -78,17 +92,8 @@ public class ApplicationService {
 				entity.setDadSchemeId(model.getSchemeId());
 				entity.setDadSchemeProviderId(model.getSchemeProviderId());
 				entity.setDadApplcntDtls(model.getApplcntDtls() != null ? jsonUtil.toJson(model.getApplcntDtls()) : null);
-				if(model.getAddtnlDtls() != null) {
-					if(entity.getDadAddtnlDtls() == null || entity.getDadAddtnlDtls().isEmpty()) {
-						entity.setDadAddtnlDtls(model.getAddtnlDtls());
-					}
-				}
-				
-				if(model.getAddtnlInfoSubmsnId() != null) {
-					if(entity.getDadAddtnlInfoSubmsnId() == null || entity.getDadAddtnlInfoSubmsnId().isEmpty()) {
-						entity.setDadAddtnlInfoSubmsnId(model.getAddtnlInfoSubmsnId());
-					}
-				}
+				entity.setDadAddtnlDtls(model.getAddtnlDtls());
+				entity.setDadAddtnlInfoSubmsnId(model.getAddtnlInfoSubmsnId());
 				
 				entity.setDadAppStatus(model.getAppStatus());
 				entity.setDadRemarks(model.getRemarks());

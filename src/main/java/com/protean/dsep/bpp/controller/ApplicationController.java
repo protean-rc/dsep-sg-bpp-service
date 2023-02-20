@@ -78,7 +78,7 @@ public class ApplicationController {
 		return response;
 	}
 	
-	@PostMapping("/accept/{appID}")
+	/*@PostMapping("/accept/{appID}")
 	public ResponseEntity<Object> acceptApplication(@PathVariable String appID, @RequestBody ApplicationDtlModel model ) {
 		boolean result = false;
 		ResponseEntity<Object> response = null;
@@ -100,7 +100,7 @@ public class ApplicationController {
 		}
 		
 		return response;
-	}
+	}*/
 	
 	@PostMapping("/reject/{appID}")
 	public ResponseEntity<Object> rejectApplication(@PathVariable String appID, @RequestBody ApplicationDtlModel model ) {

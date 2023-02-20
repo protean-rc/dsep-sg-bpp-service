@@ -36,8 +36,8 @@ logging:
       org.springframework.web: ERROR
       com.protean.dsep.bpp: INFO
       org.hibernate: ERROR
-      com.zaxxer.hikari.HikariConfig: DEBUG
-      com.zaxxer.hikari: TRACE
+      #com.zaxxer.hikari.HikariConfig: DEBUG
+      #com.zaxxer.hikari: TRACE
 xinput:
    form:
       base_url: http://localhost:8001/public/getForm

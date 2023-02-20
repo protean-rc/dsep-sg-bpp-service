@@ -32,7 +32,8 @@ public class AuditService {
 	public void updateTxnAudit(String msgID, String txnID, String actn) {
 		log.info("Updating API audit record | MessageID-{} | TransactionID-{} | Action-{}",msgID,txnID,actn);
 		try {
-			DsepApiAuditSeller apiAuditEntity = apiAuditRepo.findByMessageIdAndTransactionIdAndAction(msgID, txnID, actn);
+			//DsepApiAuditSeller apiAuditEntity = apiAuditRepo.findByMessageIdAndTransactionIdAndAction(msgID, txnID, actn);
+			DsepApiAuditSeller apiAuditEntity = apiAuditRepo.findFirstByMessageIdAndTransactionIdAndActionOrderByCreatedOnDesc(msgID, txnID, actn);
 			apiAuditEntity.setStatus("1");
 			apiAuditEntity.setUpdatedOn(new Timestamp(System.currentTimeMillis()));
 			apiAuditRepo.save(apiAuditEntity);
